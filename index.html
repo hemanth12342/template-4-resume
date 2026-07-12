@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Resume Builder</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ── Header ── -->
+    <header class="header">
+      <div class="logo-wrap">
+        <div class="logo-icon">✦</div>
+        <div class="logo-text">
+          <h1>AI Resume Builder</h1>
+          <p>Upload your resume · Paste the JD · Download your tailored PDF</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+
+      <!-- ── Step 1 : Upload resume ── -->
+      <div class="card" id="card-upload">
+        <div class="card-label">
+          <span class="step-num">1</span>
+          <h2>Upload Your Resume</h2>
+        </div>
+
+        <div class="drop-zone" id="drop-zone" role="button" tabindex="0"
+             aria-label="Upload resume — click or drag a file here">
+          <input type="file" id="file-input" accept=".pdf,.txt" hidden />
+
+          <!-- idle state -->
+          <div id="dz-idle">
+            <div class="dz-icon">📄</div>
+            <p class="dz-title">Drag &amp; drop your resume here</p>
+            <p class="dz-sub">or <span class="link">click to browse</span></p>
+            <span class="badge">PDF · TXT</span>
+          </div>
+
+          <!-- file selected state -->
+          <div id="dz-done" hidden>
+            <div class="dz-icon">✅</div>
+            <p class="dz-filename" id="dz-filename"></p>
+            <button class="btn-text-sm" id="btn-change" type="button">
+              Change file
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Step 2 : Paste JD ── -->
+      <div class="card" id="card-jd">
+        <div class="card-label">
+          <span class="step-num">2</span>
+          <h2>Paste Job Description</h2>
+        </div>
+
+        <textarea
+          id="jd-input"
+          rows="10"
+          placeholder="Paste the full job description here — the more detail, the better the tailoring. Include the role requirements, preferred skills, company context, and any technology keywords."
+        ></textarea>
+        <p class="char-count"><span id="jd-chars">0</span> characters</p>
+      </div>
+
+      <!-- ── Generate button + status ── -->
+      <div class="gen-section">
+        <p class="gen-note">Typically takes 20 – 35 seconds</p>
+
+        <button class="btn-generate" id="btn-generate" type="button">
+          <span id="btn-label">Generate My Resume</span>
+          <span class="btn-arrow" id="btn-arrow">→</span>
+        </button>
+
+        <!-- progress -->
+        <div class="status-box" id="status-box" hidden>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <p class="status-msg" id="status-msg">Starting…</p>
+        </div>
+
+        <!-- error -->
+        <div class="result-box result-error" id="error-box" hidden>
+          <span class="result-icon">⚠️</span>
+          <p id="error-msg"></p>
+          <button class="btn-action" id="btn-retry" type="button">Try Again</button>
+        </div>
+
+        <!-- success -->
+        <div class="result-box result-success" id="success-box" hidden>
+          <span class="result-icon">🎉</span>
+          <p>Your tailored resume is downloading!</p>
+          <button class="btn-action" id="btn-redownload" type="button">
+            Download Again
+          </button>
+        </div>
+      </div>
+
+    </main>
+
+    <footer class="footer">
+      <p>
+        Powered by <a href="https://groq.com" target="_blank" rel="noopener">Groq</a>
+        &amp; LaTeX Template 4 by
+        <a href="https://github.com/xprilion" target="_blank" rel="noopener">Anubhav Singh</a>
+      </p>
+    </footer>
+
+  </div><!-- /.app -->
+
+  <script src="app.js"></script>
+</body>
+</html>
