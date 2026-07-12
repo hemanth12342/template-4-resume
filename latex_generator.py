@@ -4,10 +4,13 @@ latex_generator.py — PDF generation via 4 LaTeX Templates
 Supports 4 distinct resume templates selectable by template_id (1–4).
 
 Templates:
-  1 — Classic   : Clean two-column header, section rules (Jitin Nair style)
-  2 — Modern    : Indigo header bar, colored section titles
-  3 — Sidebar   : Two-column layout with dark left sidebar
+  1 — Classic   : Clean two-column header, ruled sections (Jitin Nair style)
+  2 — Modern    : Colored section titles, elegant spacing
+  3 — Sidebar   : Two-column header + single-column body
   4 — ATS       : Original template (Anubhav Singh style)
+
+All templates have a page border on every page.
+Multi-page resumes are fully supported.
 
 Public API:
   generate_pdf(raw_data, template_id=4)  → bytes
@@ -86,7 +89,8 @@ def _make_jinja_env() -> Environment:
 
 # ──────────────────────────────────────────────────────────────────────────────
 #  TEMPLATE 1 — Classic (Jitin Nair style)
-#  Clean minimal article with two-column header and ruled sections
+#  Clean article with two-column header and ruled sections
+#  Packages: only texlive-latex-base + texlive-latex-extra (no lmodern)
 # ──────────────────────────────────────────────────────────────────────────────
 
 _TEMPLATE_1 = r"""
@@ -99,13 +103,14 @@ _TEMPLATE_1 = r"""
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage{lmodern}
-\usepackage[left=0.9in,right=0.9in,top=0.75in,bottom=0.75in]{geometry}
+\usepackage[left=0.9in,right=0.9in,top=0.85in,bottom=0.75in]{geometry}
 \usepackage[hidelinks]{hyperref}
 \usepackage{titlesec}
 \usepackage{enumitem}
 \usepackage{tabularx}
 \usepackage{array}
+\usepackage{tikz}
+\usetikzlibrary{calc}
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
@@ -114,6 +119,15 @@ _TEMPLATE_1 = r"""
 % Section style: large, bold, small-caps with a rule underneath
 \titleformat{\section}{\large\bfseries\scshape\raggedright}{}{0em}{}[\titlerule]
 \titlespacing*{\section}{0pt}{10pt}{5pt}
+
+% Page border on every page
+\AddToHook{shipout/background}{%
+  \begin{tikzpicture}[overlay,remember picture]%
+    \draw[line width=1.2pt,gray!55,rounded corners=3pt]%
+      ($(current page.north west)+(0.45cm,-0.45cm)$) rectangle%
+      ($(current page.south east)+(-0.45cm,0.45cm)$);%
+  \end{tikzpicture}%
+}
 
 %==============================================================
 \begin{document}
@@ -172,7 +186,7 @@ _TEMPLATE_1 = r"""
 \noindent
 \begin{tabularx}{\textwidth}{@{}X r@{}}
   \textbf{<<edu.institution>>} & \textit{\small <<edu.dates>>} \\
-  \small <<edu.degree>><% if edu.field %>, <<edu.field>><% endif %> &
+  \small\textit{<<edu.degree>><% if edu.field %>, <<edu.field>><% endif %>} &
   <% if edu.gpa %>\small GPA: <<edu.gpa>><% endif %>
 \end{tabularx}
 <% if edu.courses %>
@@ -197,7 +211,7 @@ _TEMPLATE_1 = r"""
 \section{Projects}
 <% for project in d.projects %>
 \noindent\textbf{<<project.title>>}
-<% if project.technologies %> \hfill \small\textit{<<project.technologies>>}<% endif %>\\
+<% if project.technologies %>\hfill \small\textit{<<project.technologies>>}<% endif %>\\
 \small <<project.description>>
 \vspace{4pt}
 <% endfor %>
@@ -230,78 +244,76 @@ _TEMPLATE_1 = r"""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  TEMPLATE 2 — Modern (Indigo header bar, colored section titles)
+#  TEMPLATE 2 — Modern (colored section titles, elegant spacing)
+#  Packages: only texlive-latex-base + texlive-latex-extra (no lmodern)
 # ──────────────────────────────────────────────────────────────────────────────
 
 _TEMPLATE_2 = r"""
 %------------------------
 % Resume Template 2 — Modern
-% Style: Indigo header bar, bold colored section headings
+% Style: Colored section headings, elegant spacing
 %------------------------
 
-\documentclass[a4paper,10.5pt]{article}
+\documentclass[a4paper,11pt]{article}
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage{lmodern}
-\usepackage[left=0.7in,right=0.7in,top=0in,bottom=0.6in]{geometry}
+\usepackage[left=0.85in,right=0.85in,top=0.85in,bottom=0.75in]{geometry}
 \usepackage[hidelinks]{hyperref}
 \usepackage{xcolor}
 \usepackage{titlesec}
 \usepackage{enumitem}
 \usepackage{tabularx}
 \usepackage{array}
+\usepackage{tikz}
+\usetikzlibrary{calc}
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0pt}
 
-% Brand colour
-\definecolor{accent}{RGB}{67,56,202}     % indigo-700
-\definecolor{accentbg}{RGB}{224,231,255} % indigo-100
-\definecolor{lightgray}{RGB}{107,114,128}
+% Brand colours
+\definecolor{accent}{RGB}{67,56,202}      % indigo-700
+\definecolor{accentlight}{RGB}{99,102,241}% indigo-500
+\definecolor{mutedgray}{RGB}{107,114,128} % gray-500
 
-% Section headings: bold, accent-coloured, with a thin coloured rule
+% Section headings: bold, accent-colored, with colored rule
 \titleformat{\section}[block]
-  {\large\bfseries\color{accent}}{}{0em}{}[\color{accent}\titlerule]
-\titlespacing*{\section}{0pt}{10pt}{5pt}
+  {\large\bfseries\color{accent}}{}{0em}{}[\color{accentlight}\titlerule]
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+
+% Page border on every page
+\AddToHook{shipout/background}{%
+  \begin{tikzpicture}[overlay,remember picture]%
+    \draw[line width=1.2pt,gray!55,rounded corners=3pt]%
+      ($(current page.north west)+(0.45cm,-0.45cm)$) rectangle%
+      ($(current page.south east)+(-0.45cm,0.45cm)$);%
+  \end{tikzpicture}%
+}
 
 %==============================================================
 \begin{document}
 %==============================================================
 
-%-------- HEADER BAR --------
-\noindent
-\colorbox{accent}{%
-  \begin{minipage}[c][1.8cm]{\dimexpr\textwidth+\oddsidemargin+1in+\hoffset+\evensidemargin\relax}%
-    \hspace{0.7in}%
-    {\color{white}\Huge\bfseries <<d.name>>}%
-  \end{minipage}%
-}
-
-\vspace{0pt}
-
-% Contact row
-\noindent\colorbox{accentbg}{%
-  \begin{minipage}[c][0.55cm]{\dimexpr\textwidth+\oddsidemargin+1in+\hoffset+\evensidemargin\relax}%
-    \hspace{0.7in}\small\color{lightgray}
-    \href{mailto:<<d.email>>}{<<d.email | le>>}
-<% if d.phone %>
-    ~\textbf{|}~ <<d.phone>>
-<% endif %>
+%-------- HEADER --------
+\begin{center}
+  {\Huge\bfseries <<d.name>>}\\[6pt]
+  {\color{accentlight}\rule{0.4\textwidth}{1.5pt}}\\[6pt]
+  \small
+  \href{mailto:<<d.email>>}{<<d.email | le>>}
+  ~\textbf{\textcolor{mutedgray}{|}}~<<d.phone>>
 <% if d.linkedin %>
-    ~\textbf{|}~ \href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>}
+  ~\textbf{\textcolor{mutedgray}{|}}~\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>}
 <% endif %>
 <% if d.github %>
-    ~\textbf{|}~ \href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}
+  ~\textbf{\textcolor{mutedgray}{|}}~\href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}
 <% endif %>
 <% if d.portfolio_url %>
-    ~\textbf{|}~ \href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>}
+  ~\textbf{\textcolor{mutedgray}{|}}~\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>}
 <% endif %>
-  \end{minipage}%
-}
+\end{center}
 
-\vspace{8pt}
+\vspace{4pt}
 
 %-------- SUMMARY --------
 <% if d.summary %>
@@ -315,8 +327,10 @@ _TEMPLATE_2 = r"""
 <% for exp in d.experience %>
 \noindent
 \begin{tabularx}{\textwidth}{@{}X r@{}}
-  \textbf{<<exp.role>>} \textcolor{lightgray}{|} \textit{<<exp.company>>}
-  \textcolor{lightgray}{| <<exp.location>>} & \textcolor{lightgray}{\small <<exp.dates>>}
+  \textbf{<<exp.role>>}
+  \textcolor{mutedgray}{|} \textit{<<exp.company>>}
+  \textcolor{mutedgray}{| \small<<exp.location>>}
+  & \textcolor{mutedgray}{\small <<exp.dates>>}
 \end{tabularx}
 \begin{itemize}[noitemsep, topsep=2pt, leftmargin=1.2em]
 <% for bullet in exp.bullets %>
@@ -333,12 +347,12 @@ _TEMPLATE_2 = r"""
 <% for edu in d.education %>
 \noindent
 \begin{tabularx}{\textwidth}{@{}X r@{}}
-  \textbf{<<edu.institution>>} & \textcolor{lightgray}{\small <<edu.dates>>} \\
-  \small \textit{<<edu.degree>><% if edu.field %> in <<edu.field>><% endif %>}
-  <% if edu.gpa %>& \textcolor{lightgray}{\small GPA: <<edu.gpa>>}<% endif %>
+  \textbf{<<edu.institution>>} & \textcolor{mutedgray}{\small <<edu.dates>>} \\
+  \small\textit{<<edu.degree>><% if edu.field %> in <<edu.field>><% endif %>}
+  <% if edu.gpa %>& \textcolor{mutedgray}{\small GPA: <<edu.gpa>>}<% endif %>
 \end{tabularx}
 <% if edu.courses %>
-\\\small\textcolor{lightgray}{Courses: <<edu.courses>>}
+\\\small\textcolor{mutedgray}{Courses: <<edu.courses>>}
 <% endif %>
 \vspace{5pt}
 <% endfor %>
@@ -347,9 +361,9 @@ _TEMPLATE_2 = r"""
 %-------- SKILLS --------
 <% if d.skills %>
 \section{Skills}
-\begin{tabularx}{\textwidth}{@{} >{\bfseries\small\color{accent}}l X @{}}
+\begin{tabularx}{\textwidth}{@{} >{\bfseries\small\color{accent}}p{2.2cm} X @{}}
 <% for skill in d.skills %>
-  <<skill.category>> & \small <<skill.items>> \\[2pt]
+  <<skill.category>> & \small <<skill.items>> \\[3pt]
 <% endfor %>
 \end{tabularx}
 <% endif %>
@@ -358,9 +372,9 @@ _TEMPLATE_2 = r"""
 <% if d.projects %>
 \section{Projects}
 <% for project in d.projects %>
-\noindent\textbf{\color{accent}<<project.title>>}
+\noindent{\bfseries\color{accent}<<project.title>>}
 <% if project.technologies %>
-  \hfill \textcolor{lightgray}{\small\textit{<<project.technologies>>}}
+  \hfill \textcolor{mutedgray}{\small\textit{<<project.technologies>>}}
 <% endif %>
 \\\small <<project.description>>
 \vspace{5pt}
@@ -382,9 +396,9 @@ _TEMPLATE_2 = r"""
 \section{Volunteer Experience}
 <% for vol in d.volunteer %>
 \noindent\textbf{<<vol.role>>}
-\textcolor{lightgray}{|} \textit{<<vol.organization>>}
-<% if vol.location %>\textcolor{lightgray}{| <<vol.location>>}<% endif %>
-\hfill \textcolor{lightgray}{\small <<vol.dates>>}
+\textcolor{mutedgray}{|} \textit{<<vol.organization>>}
+<% if vol.location %>\textcolor{mutedgray}{| <<vol.location>>}<% endif %>
+\hfill \textcolor{mutedgray}{\small <<vol.dates>>}
 <% if vol.description %>\\{\small <<vol.description>>}<% endif %>
 \vspace{5pt}
 <% endfor %>
@@ -395,189 +409,173 @@ _TEMPLATE_2 = r"""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  TEMPLATE 3 — Sidebar (two-column: dark left sidebar + white right content)
+#  TEMPLATE 3 — Sidebar
+#  Two-column header block (name left, contact/skills right) + normal body
+#  Multi-page friendly. Packages: texlive-latex-base + texlive-latex-extra only.
 # ──────────────────────────────────────────────────────────────────────────────
 
 _TEMPLATE_3 = r"""
 %------------------------
 % Resume Template 3 — Sidebar
-% Style: Dark sidebar on left, content on right
+% Two-column header: dark name block left, contact/skills right
 %------------------------
 
-\documentclass[a4paper,10pt]{article}
+\documentclass[a4paper,11pt]{article}
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage{lmodern}
-\usepackage[margin=0in]{geometry}
+\usepackage[left=0.75in,right=0.75in,top=0.75in,bottom=0.75in]{geometry}
 \usepackage[hidelinks]{hyperref}
 \usepackage{xcolor}
+\usepackage{titlesec}
 \usepackage{enumitem}
-\usepackage{array}
 \usepackage{tabularx}
+\usepackage{array}
 \usepackage{tikz}
-\usepackage{minibox}
+\usetikzlibrary{calc}
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{4pt}
+\setlength{\parskip}{0pt}
 
-\definecolor{sidebarBg}{RGB}{31,41,55}    % gray-800
-\definecolor{sidebarText}{RGB}{243,244,246} % gray-100
-\definecolor{sidebarRule}{RGB}{75,85,99}   % gray-600
-\definecolor{sidebarMuted}{RGB}{156,163,175}% gray-400
-\definecolor{contentRule}{RGB}{209,213,219} % gray-300
+% Colours
+\definecolor{sidebarBg}{RGB}{31,41,55}     % gray-800
+\definecolor{sidebarText}{RGB}{243,244,246}% gray-100
 \definecolor{accentBlue}{RGB}{37,99,235}   % blue-600
+\definecolor{muted}{RGB}{107,114,128}      % gray-500
 
-% -- Sidebar section heading
-\newcommand{\sideSection}[1]{%
-  \vspace{6pt}%
-  {\color{sidebarText}\small\bfseries\MakeUppercase{#1}}\\[-2pt]%
-  {\color{sidebarRule}\rule{\linewidth}{0.4pt}}%
-  \vspace{2pt}%
-}
+% Section heading: bold, blue, with gray rule
+\titleformat{\section}[block]
+  {\large\bfseries\color{accentBlue}}{}{0em}{}[\color{gray}\titlerule]
+\titlespacing*{\section}{0pt}{10pt}{5pt}
 
-% -- Main content section heading
-\newcommand{\mainSection}[1]{%
-  \vspace{8pt}%
-  {\large\bfseries\color{accentBlue} #1}\\[-4pt]%
-  {\color{contentRule}\rule{\linewidth}{0.6pt}}%
-  \vspace{3pt}%
+% Page border on every page
+\AddToHook{shipout/background}{%
+  \begin{tikzpicture}[overlay,remember picture]%
+    \draw[line width=1.2pt,gray!55,rounded corners=3pt]%
+      ($(current page.north west)+(0.45cm,-0.45cm)$) rectangle%
+      ($(current page.south east)+(-0.45cm,0.45cm)$);%
+  \end{tikzpicture}%
 }
 
 %==============================================================
 \begin{document}
 %==============================================================
 
-% Overall two-column table — sidebar 34%, content 66%
+%-------- TWO-COLUMN HEADER BLOCK --------
 \noindent
-\begin{tabular*}{\paperwidth}{@{} p{0.34\paperwidth} @{} p{0.01\paperwidth} @{} p{0.62\paperwidth} @{}}
-
-%====== LEFT SIDEBAR ======
-\cellcolor{sidebarBg}%
-\begin{minipage}[t][\paperheight][t]{0.33\paperwidth}%
-\color{sidebarText}%
-\vspace*{14pt}%
-\hspace*{10pt}%
-\begin{minipage}{0.28\paperwidth}
-
-% Name
-{\Large\bfseries\color{white} <<d.name>>}
-\vspace{10pt}
-
-% Contact
-\sideSection{Contact}
-<% if d.email %>
-{\small\color{sidebarMuted} Email}\\
-{\small\href{mailto:<<d.email>>}{<<d.email | le>>}}\\[3pt]
-<% endif %>
+\begin{minipage}[t]{0.38\textwidth}
+  \colorbox{sidebarBg}{\begin{minipage}[t][3.6cm][t]{\linewidth}
+    \vspace{8pt}
+    \hspace{6pt}{\Large\bfseries\color{sidebarText} <<d.name>>}
+    \vspace{6pt}
 <% if d.phone %>
-{\small\color{sidebarMuted} Phone}\\
-{\small <<d.phone>>}\\[3pt]
+    \\\hspace{6pt}\small\color{sidebarText}<<d.phone>>
+<% endif %>
+<% if d.email %>
+    \\\hspace{6pt}\small\color{sidebarText}\href{mailto:<<d.email>>}{<<d.email | le>>}
 <% endif %>
 <% if d.linkedin %>
-{\small\color{sidebarMuted} LinkedIn}\\
-{\small\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>}}\\[3pt]
+    \\\hspace{6pt}\small\color{sidebarText}\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>}
 <% endif %>
 <% if d.github %>
-{\small\color{sidebarMuted} GitHub}\\
-{\small\href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}}\\[3pt]
+    \\\hspace{6pt}\small\color{sidebarText}\href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}
 <% endif %>
 <% if d.portfolio_url %>
-{\small\color{sidebarMuted} Portfolio}\\
-{\small\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>}}\\[3pt]
+    \\\hspace{6pt}\small\color{sidebarText}\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>}
 <% endif %>
-
-% Skills
-<% if d.skills %>
-\sideSection{Skills}
-<% for skill in d.skills %>
-{\small\bfseries\color{white}<<skill.category>>}\\
-{\small\color{sidebarMuted}<<skill.items>>}\\[4pt]
-<% endfor %>
-<% endif %>
-
-% Education
-<% if d.education %>
-\sideSection{Education}
-<% for edu in d.education %>
-{\small\bfseries\color{white}<<edu.institution>>}\\
-{\small\color{sidebarMuted}<<edu.degree>><% if edu.field %>, <<edu.field>><% endif %>>}\\
-{\small\color{sidebarMuted}<<edu.dates>><% if edu.gpa %> | GPA: <<edu.gpa>><% endif %>>}\\[4pt]
-<% endfor %>
-<% endif %>
-
-% Awards
-<% if d.awards %>
-\sideSection{Awards}
-\begin{itemize}[noitemsep,topsep=0pt,leftmargin=1em]
-<% for award in d.awards %>
-  \item {\small\color{sidebarMuted}<<award>>}
-<% endfor %>
-\end{itemize}
-<% endif %>
-
+    \vspace{8pt}
+  \end{minipage}}
 \end{minipage}%
+\hspace{0.03\textwidth}%
+\begin{minipage}[t]{0.59\textwidth}
+  \vspace{4pt}
+<% if d.skills %>
+  \textbf{\color{accentBlue}\small SKILLS}\\[2pt]
+  {\color{gray}\rule{\linewidth}{0.4pt}}\\[4pt]
+<% for skill in d.skills %>
+  \noindent{\small\bfseries <<skill.category>>:} {\small <<skill.items>>}\\[2pt]
+<% endfor %>
+<% endif %>
 \end{minipage}
 
-& & % spacer column
+\vspace{10pt}
 
-%====== RIGHT CONTENT ======
-\begin{minipage}[t][\paperheight][t]{0.62\paperwidth}%
-\vspace*{10pt}%
-\hspace*{8pt}%
-\begin{minipage}{0.57\paperwidth}
-
-% Summary
+%-------- SUMMARY --------
 <% if d.summary %>
-\mainSection{Professional Summary}
+\section{Professional Summary}
 \small <<d.summary>>
 <% endif %>
 
-% Experience
+%-------- EXPERIENCE --------
 <% if d.experience %>
-\mainSection{Experience}
+\section{Experience}
 <% for exp in d.experience %>
-\noindent{\small\bfseries <<exp.role>>} \hfill {\small\textit{<<exp.dates>>}}\\
-{\small\textit{<<exp.company>>}<% if exp.location %>, <<exp.location>><% endif %>}
-\begin{itemize}[noitemsep,topsep=2pt,leftmargin=1.2em]
+\noindent
+\begin{tabularx}{\textwidth}{@{}X r@{}}
+  \textbf{<<exp.role>>} & \textcolor{muted}{\small <<exp.dates>>} \\
+  \small\textit{<<exp.company>><% if exp.location %>, <<exp.location>><% endif %>} &
+\end{tabularx}
+\begin{itemize}[noitemsep, topsep=2pt, leftmargin=1.2em]
 <% for bullet in exp.bullets %>
-  \item{\small <<bullet>>}
+  \item \small <<bullet>>
 <% endfor %>
 \end{itemize}
-\vspace{4pt}
+\vspace{5pt}
 <% endfor %>
 <% endif %>
 
-% Projects
+%-------- EDUCATION --------
+<% if d.education %>
+\section{Education}
+<% for edu in d.education %>
+\noindent
+\begin{tabularx}{\textwidth}{@{}X r@{}}
+  \textbf{<<edu.institution>>} & \textcolor{muted}{\small <<edu.dates>>} \\
+  \small\textit{<<edu.degree>><% if edu.field %>, <<edu.field>><% endif %>>}
+  <% if edu.gpa %>& \textcolor{muted}{\small GPA: <<edu.gpa>>}<% endif %>
+\end{tabularx}
+<% if edu.courses %>
+\\\small\textcolor{muted}{Courses: <<edu.courses>>}
+<% endif %>
+\vspace{5pt}
+<% endfor %>
+<% endif %>
+
+%-------- PROJECTS --------
 <% if d.projects %>
-\mainSection{Projects}
+\section{Projects}
 <% for project in d.projects %>
-\noindent{\small\bfseries <<project.title>>}
+\noindent\textbf{<<project.title>>}
 <% if project.technologies %>
-  \hfill {\small\textit{<<project.technologies>>}}
+  \hfill \textcolor{muted}{\small\textit{<<project.technologies>>}}
 <% endif %>
-\\{\small <<project.description>>}
-\vspace{4pt}
+\\\small <<project.description>>
+\vspace{5pt}
 <% endfor %>
 <% endif %>
 
-% Volunteer
+%-------- AWARDS --------
+<% if d.awards %>
+\section{Honors \& Awards}
+\begin{itemize}[noitemsep, topsep=2pt, leftmargin=1.2em]
+<% for award in d.awards %>
+  \item \small <<award>>
+<% endfor %>
+\end{itemize}
+<% endif %>
+
+%-------- VOLUNTEER --------
 <% if d.volunteer %>
-\mainSection{Volunteer}
+\section{Volunteer Experience}
 <% for vol in d.volunteer %>
-\noindent{\small\bfseries <<vol.role>>} --- \textit{<<vol.organization>>}
+\noindent\textbf{<<vol.role>>} --- \textit{<<vol.organization>>}
 <% if vol.location %>, <<vol.location>><% endif %>
-\hfill{\small\textit{<<vol.dates>>}}
+\hfill \textcolor{muted}{\small <<vol.dates>>}
 <% if vol.description %>\\{\small <<vol.description>>}<% endif %>
-\vspace{4pt}
+\vspace{5pt}
 <% endfor %>
 <% endif %>
-
-\end{minipage}%
-\end{minipage}
-
-\end{tabular*}
 
 \end{document}
 """
@@ -585,6 +583,7 @@ _TEMPLATE_3 = r"""
 
 # ──────────────────────────────────────────────────────────────────────────────
 #  TEMPLATE 4 — ATS Classic (original Anubhav Singh style)
+#  UNCHANGED from original — border added only
 # ──────────────────────────────────────────────────────────────────────────────
 
 _TEMPLATE_4 = r"""
@@ -604,6 +603,8 @@ _TEMPLATE_4 = r"""
 \usepackage{enumitem}
 \usepackage[pdftex]{hyperref}
 \usepackage{fancyhdr}
+\usepackage{tikz}
+\usetikzlibrary{calc}
 
 \pagestyle{fancy}
 \fancyhf{}
@@ -625,6 +626,15 @@ _TEMPLATE_4 = r"""
 \titleformat{\section}{
   \vspace{-10pt}\scshape\raggedright\large
 }{}{0em}{}[\color{black}\titlerule \vspace{-6pt}]
+
+% Page border on every page
+\AddToHook{shipout/background}{%
+  \begin{tikzpicture}[overlay,remember picture]%
+    \draw[line width=1.2pt,gray!55,rounded corners=3pt]%
+      ($(current page.north west)+(0.45cm,-0.45cm)$) rectangle%
+      ($(current page.south east)+(-0.45cm,0.45cm)$);%
+  \end{tikzpicture}%
+}
 
 \newcommand{\resumeItem}[2]{
   \item\small{
@@ -894,7 +904,6 @@ def generate_all_pdfs(raw_data: dict) -> dict:
     -------
     dict  {template_id (int): pdf_bytes (bytes)}
     """
-    # Normalise and escape once, then render each template
     data    = _normalize(dict(raw_data))
     escaped = _escape_data(data)
     env     = _make_jinja_env()
