@@ -5,7 +5,7 @@
  *   Local dev  → 'http://localhost:8000'
  *   Render     → 'https://your-app-name.onrender.com'
  */
-const API = 'http://localhost:8000';
+const API = 'https://sai-resume-pnic.onrender.com';
 
 // ── DOM references ────────────────────────────────────────────────────────────
 
