@@ -1,10 +1,12 @@
 """
 main.py — AI Resume Builder Backend
 FastAPI application that:
-  1. Receives an uploaded resume (PDF / TXT) + a job description.
+  1. Receives an uploaded resume (PDF / TXT) + a job description + template_id.
   2. Extracts structured data from the resume via Groq LLM.
   3. Enhances that data to match the JD via a second Groq call.
-  4. Passes the enriched data to latex_generator.py → returns a PDF.
+  4. Passes the enriched data to latex_generator.py:
+       • template_id 1–4  → single PDF returned as attachment
+       • template_id 0    → all 4 PDFs returned as a ZIP archive
 """
 
 import asyncio
@@ -13,6 +15,7 @@ import json
 import os
 import re
 import time
+import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
@@ -23,18 +26,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from groq import Groq
 
-from latex_generator import generate_pdf
+from latex_generator import generate_pdf, generate_all_pdfs
 
 load_dotenv()
 
 # ── App & CORS ────────────────────────────────────────────────────────────────
 
-app = FastAPI(title="AI Resume Builder", version="1.0.0")
+app = FastAPI(title="AI Resume Builder", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    # ⚠️  For production, replace "*" with your Vercel frontend URL
-    # e.g. allow_origins=["https://my-resume-builder.vercel.app"]
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
@@ -48,7 +49,6 @@ MODEL   = "llama-3.3-70b-versatile"
 
 MAX_FILE_BYTES = 10 * 1024 * 1024   # 10 MB hard limit
 
-# Thread pool so blocking calls (Groq HTTP + pdflatex) don't block the event loop
 _pool = ThreadPoolExecutor(max_workers=4)
 
 
@@ -72,7 +72,6 @@ def _extract_text(file_bytes: bytes, filename: str) -> str:
             )
         return text
 
-    # Plain text fallback
     try:
         return file_bytes.decode("utf-8", errors="ignore").strip()
     except Exception as exc:
@@ -168,10 +167,7 @@ _RESUME_SCHEMA = """{
 # ── AI pipeline steps ─────────────────────────────────────────────────────────
 
 def _parse_resume(resume_text: str) -> dict:
-    """
-    Step 1 — Use Groq to extract all resume information into structured JSON.
-    Does NOT invent data — only extracts what is present.
-    """
+    """Step 1 — Extract all resume info into structured JSON using Groq."""
     prompt = f"""You are a precise resume parser.
 
 Extract ALL information from the resume text below and return it as a valid JSON object.
@@ -200,10 +196,7 @@ Return the JSON object matching this exact schema:
 
 
 def _enhance(data: dict, jd: str) -> dict:
-    """
-    Step 2 — Use Groq to tailor the structured resume data to the job description.
-    Enhances bullet points, summary, and skill ordering without fabricating experience.
-    """
+    """Step 2 — Tailor the structured resume data to the job description."""
     prompt = f"""You are a world-class resume strategist, ATS expert, and career coach.
 
 Your task: transform the structured resume data below into a perfectly tailored,
@@ -268,14 +261,16 @@ No markdown fences, no commentary, just the JSON.
 async def generate_resume(
     resume_file:     UploadFile = File(..., description="PDF or TXT resume"),
     job_description: str        = Form(..., description="Full job description text"),
+    template_id:     str        = Form("4", description="Template 1–4, or 0 for all 4 as ZIP"),
 ):
     """
     Main endpoint.
     Accepts a multipart form with:
       - resume_file     : the candidate's current resume (PDF or TXT)
       - job_description : the target job description (plain text)
+      - template_id     : "1"–"4" for a single PDF, "0" for all 4 as a ZIP archive
 
-    Returns a tailored PDF resume as an attachment.
+    Returns a PDF (single) or ZIP (all 4) as an attachment.
     """
     # ── Validate ──────────────────────────────────────────────
     if not resume_file.filename:
@@ -283,40 +278,78 @@ async def generate_resume(
     if len(job_description.strip()) < 30:
         raise HTTPException(400, "Job description is too short (minimum 30 characters).")
 
+    try:
+        tid = int(template_id)
+    except ValueError:
+        raise HTTPException(400, "template_id must be an integer 0–4.")
+    if tid not in {0, 1, 2, 3, 4}:
+        raise HTTPException(400, "template_id must be 0 (all), 1, 2, 3, or 4.")
+
     file_bytes = await resume_file.read()
     if len(file_bytes) > MAX_FILE_BYTES:
         raise HTTPException(400, "File is too large. Maximum allowed size is 10 MB.")
 
-    # ── Text extraction (sync but fast — runs inline) ─────────
+    # ── Text extraction ────────────────────────────────────────
     resume_text = _extract_text(file_bytes, resume_file.filename)
 
-    # ── AI pipeline (blocking HTTP calls — run in thread pool) ─
+    # ── AI pipeline ────────────────────────────────────────────
     loop = asyncio.get_event_loop()
 
     structured = await loop.run_in_executor(_pool, _parse_resume, resume_text)
     enhanced   = await loop.run_in_executor(_pool, partial(_enhance, structured, job_description))
 
-    # ── PDF generation (blocking subprocess) ──────────────────
+    safe_name = re.sub(r"[^a-zA-Z0-9_\-]", "_", enhanced.get("name", "resume"))
+
+    # ── Single template → PDF ──────────────────────────────────
+    if tid != 0:
+        try:
+            pdf_bytes = await loop.run_in_executor(
+                _pool, partial(generate_pdf, enhanced, tid)
+            )
+        except RuntimeError as exc:
+            raise HTTPException(500, f"PDF compilation failed: {exc}") from exc
+
+        filename = f"resume_{safe_name}_T{tid}.pdf"
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
+    # ── All 4 templates → ZIP ──────────────────────────────────
     try:
-        pdf_bytes = await loop.run_in_executor(_pool, generate_pdf, enhanced)
+        all_pdfs = await loop.run_in_executor(_pool, partial(generate_all_pdfs, enhanced))
     except RuntimeError as exc:
         raise HTTPException(500, f"PDF compilation failed: {exc}") from exc
 
-    # ── Stream PDF back to client ──────────────────────────────
-    safe_name = re.sub(r"[^a-zA-Z0-9_\-]", "_", enhanced.get("name", "resume"))
-    filename  = f"resume_{safe_name}.pdf"
+    zip_buffer = io.BytesIO()
+    template_names = {
+        1: "Classic",
+        2: "Modern",
+        3: "Sidebar",
+        4: "ATS_Classic",
+    }
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for t_id, pdf_bytes in sorted(all_pdfs.items()):
+            zf.writestr(
+                f"resume_{safe_name}_Template{t_id}_{template_names[t_id]}.pdf",
+                pdf_bytes,
+            )
+    zip_buffer.seek(0)
 
     return StreamingResponse(
-        io.BytesIO(pdf_bytes),
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        zip_buffer,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="resume_{safe_name}_all_templates.zip"'
+        },
     )
 
 
 @app.get("/health")
 async def health():
     """Simple liveness probe."""
-    return {"status": "ok", "model": MODEL}
+    return {"status": "ok", "model": MODEL, "templates": [1, 2, 3, 4]}
 
 
 # ── Local runner ──────────────────────────────────────────────────────────────
