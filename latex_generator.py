@@ -1,17 +1,15 @@
 """
-latex_generator.py — PDF generation via 4 LaTeX Templates
-==========================================================
-Supports 4 distinct resume templates selectable by template_id (1–4).
+latex_generator.py — All 4 LaTeX Templates with Jinja2
+========================================================
+Template 1 : Jitin Nair   — Modern CV (fontawesome5 icons)
+Template 2 : TLC Resume   — Data Science / Tech (self-contained)
+Template 3 : FAANG Path   — Classic one-page (custom resume.cls written at runtime)
+Template 4 : Anubhav Singh— Developer compact (ATS-friendly)
 
-Templates:
-  1 — Classic   : Clean two-column header, section rules (Jitin Nair style)
-  2 — Modern    : Indigo header bar, colored section titles
-  3 — Sidebar   : Two-column layout with dark left sidebar
-  4 — ATS       : Original template (Anubhav Singh style)
-
-Public API:
-  generate_pdf(raw_data, template_id=4)  → bytes
-  generate_all_pdfs(raw_data)            → {1: bytes, 2: bytes, 3: bytes, 4: bytes}
+Jinja2 delimiters (LaTeX-safe):
+  Variables  →  << var >>
+  Blocks     →  <% tag %>
+  Comments   →  <# comment #>
 """
 
 import os
@@ -19,15 +17,12 @@ import re
 import shutil
 import subprocess
 import tempfile
-from concurrent.futures import ThreadPoolExecutor
 
 from jinja2 import BaseLoader, Environment
 
-# ── Constants ─────────────────────────────────────────────────────────────────
+# ── LaTeX escaping ─────────────────────────────────────────────────────────────
 
 _URL_FIELDS = {"email", "portfolio_url", "linkedin", "github"}
-
-# ── LaTeX escaping ────────────────────────────────────────────────────────────
 
 _SPECIAL = {
     "\\": r"\textbackslash{}",
@@ -45,14 +40,12 @@ _ESCAPE_RE = re.compile("|".join(re.escape(c) for c in _SPECIAL))
 
 
 def escape_latex(text: str) -> str:
-    """Escape LaTeX special characters in a plain-text string."""
     if not isinstance(text, str):
         text = str(text)
     return _ESCAPE_RE.sub(lambda m: _SPECIAL[m.group()], text)
 
 
 def _escape_data(obj: object, _key: str = "") -> object:
-    """Recursively escape LaTeX special characters; URL fields are kept verbatim."""
     if isinstance(obj, dict):
         return {k: _escape_data(v, _key=k) for k, v in obj.items()}
     if isinstance(obj, list):
@@ -62,10 +55,9 @@ def _escape_data(obj: object, _key: str = "") -> object:
     return obj
 
 
-# ── Jinja2 environment ────────────────────────────────────────────────────────
+# ── Jinja2 environment ─────────────────────────────────────────────────────────
 
 def _make_jinja_env() -> Environment:
-    """Jinja2 env with LaTeX-safe delimiters: <<var>>  <%block%>  <#comment#>"""
     env = Environment(
         loader=BaseLoader(),
         block_start_string="<%",
@@ -79,583 +71,454 @@ def _make_jinja_env() -> Environment:
         autoescape=False,
         keep_trailing_newline=True,
     )
-    env.filters["le"] = escape_latex
-    env.filters["clean_url"] = lambda u: re.sub(r"^https?://", "", u).rstrip("/")
+    env.filters["le"]        = escape_latex
+    env.filters["clean_url"] = lambda u: re.sub(r"^https?://", "", str(u)).rstrip("/")
     return env
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-#  TEMPLATE 1 — Jake's Resume Style
-#  Source: https://github.com/jakegut/resume  (MIT License)
-#  Packages: latexsym, fullpage, titlesec, color, verbatim, enumitem,
-#            hyperref, fancyhdr, babel, tabularx  — all in texlive-latex-extra
-# ──────────────────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+#  TEMPLATE 1 — Jitin Nair Modern CV
+#  Original: github.com/jitinnair1/autoCV  |  MIT License
+#  Changes : dummy data → Jinja2 variables; publications removed (uncommon)
+# ══════════════════════════════════════════════════════════════════════════════
 
 _TEMPLATE_1 = r"""
-%-------------------------
-% Resume — Jake's Resume Style
-% Based on: https://github.com/jakegut/resume (MIT License)
-%-------------------------
+\documentclass[a4paper,12pt]{article}
 
-\documentclass[letterpaper,11pt]{article}
-
-\usepackage{latexsym}
-\usepackage[empty]{fullpage}
-\usepackage{titlesec}
-\usepackage[usenames,dvipsnames]{color}
-\usepackage{verbatim}
-\usepackage{enumitem}
-\usepackage[hidelinks]{hyperref}
-\usepackage{fancyhdr}
-\usepackage[english]{babel}
-\usepackage{tabularx}
-
-\pagestyle{fancy}
-\fancyhf{}
-\fancyfoot{}
-\renewcommand{\headrulewidth}{0pt}
-\renewcommand{\footrulewidth}{0pt}
-
-\addtolength{\oddsidemargin}{-0.5in}
-\addtolength{\evensidemargin}{-0.5in}
-\addtolength{\textwidth}{1in}
-\addtolength{\topmargin}{-.5in}
-\addtolength{\textheight}{1.0in}
-
-\urlstyle{same}
-\raggedbottom
-\raggedright
-\setlength{\tabcolsep}{0in}
-
-% Sections formatting
-\titleformat{\section}{
-  \vspace{-4pt}\scshape\raggedright\large
-}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
-
-%-------------------------
-% Custom commands
-
-\newcommand{\jresumeItem}[1]{
-  \item\small{{#1 \vspace{-2pt}}}
-}
-
-\newcommand{\jresumeSubheading}[4]{
-  \vspace{-2pt}\item
-    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
-      \textbf{#1} & #2 \\
-      \textit{\small#3} & \textit{\small #4} \\
-    \end{tabular*}\vspace{-7pt}
-}
-
-\newcommand{\jresumeProjectHeading}[2]{
-    \item
-    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
-      \small#1 & #2 \\
-    \end{tabular*}\vspace{-7pt}
-}
-
-\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
-
-\newcommand{\jresumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
-\newcommand{\jresumeSubHeadingListEnd}{\end{itemize}}
-\newcommand{\jresumeItemListStart}{\begin{itemize}}
-\newcommand{\jresumeItemListEnd}{\end{itemize}\vspace{-5pt}}
-
-%-------------------------------------------
-\begin{document}
-
-%----------HEADING----------
-\begin{center}
-    \textbf{\Huge \scshape <<d.name>>} \\ \vspace{4pt}
-    \small
-    \href{mailto:<<d.email>>}{<<d.email | le>>}
-<% if d.phone %> $|$ \href{tel:<<d.phone>>}{<<d.phone>>}<% endif %>
-<% if d.linkedin %> $|$ \href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>}<% endif %>
-<% if d.github %> $|$ \href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}<% endif %>
-<% if d.portfolio_url %> $|$ \href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>}<% endif %>
-\end{center}
-
-%-----------SUMMARY-----------
-<% if d.summary %>
-\section{Summary}
- \jresumeSubHeadingListStart
-    \small{\item{<<d.summary>>}}
- \jresumeSubHeadingListEnd
-<% endif %>
-
-%-----------EDUCATION-----------
-<% if d.education %>
-\section{Education}
-  \jresumeSubHeadingListStart
-<% for edu in d.education %>
-    \jresumeSubheading
-      {<<edu.institution>>}{<<edu.dates>>}
-      {<<edu.degree>><% if edu.field %> -- <<edu.field>><% endif %>}{<% if edu.gpa %>GPA: <<edu.gpa>><% endif %>}
-<% if edu.courses %>
-      \jresumeItemListStart
-        \jresumeItem{Relevant Coursework: <<edu.courses>>}
-      \jresumeItemListEnd
-<% endif %>
-<% endfor %>
-  \jresumeSubHeadingListEnd
-<% endif %>
-
-%-----------EXPERIENCE-----------
-<% if d.experience %>
-\section{Experience}
-  \jresumeSubHeadingListStart
-<% for exp in d.experience %>
-    \jresumeSubheading
-      {<<exp.role>>}{<<exp.dates>>}
-      {<<exp.company>>}{<<exp.location>>}
-      \jresumeItemListStart
-<% for bullet in exp.bullets %>
-        \jresumeItem{<<bullet>>}
-<% endfor %>
-      \jresumeItemListEnd
-<% endfor %>
-  \jresumeSubHeadingListEnd
-<% endif %>
-
-%-----------PROJECTS-----------
-<% if d.projects %>
-\section{Projects}
-    \jresumeSubHeadingListStart
-<% for project in d.projects %>
-      \jresumeProjectHeading
-          {\textbf{<<project.title>>} $|$ \emph{\small <<project.technologies>>}}{}
-          \jresumeItemListStart
-            \jresumeItem{<<project.description>>}
-          \jresumeItemListEnd
-<% endfor %>
-    \jresumeSubHeadingListEnd
-<% endif %>
-
-%-----------TECHNICAL SKILLS-----------
-<% if d.skills %>
-\section{Technical Skills}
- \jresumeSubHeadingListStart
-    \small{\item{
-<% for skill in d.skills %>
-     \textbf{<<skill.category>>}{: <<skill.items>>} \\
-<% endfor %>
-    }}
- \jresumeSubHeadingListEnd
-<% endif %>
-
-%-----------HONORS & AWARDS-----------
-<% if d.awards %>
-\section{Honors \& Awards}
- \jresumeSubHeadingListStart
-    \small{\item{
-<% for award in d.awards %>
-      $\bullet$\ <<award>> \\
-<% endfor %>
-    }}
- \jresumeSubHeadingListEnd
-<% endif %>
-
-%-----------VOLUNTEER-----------
-<% if d.volunteer %>
-\section{Volunteer Experience}
-  \jresumeSubHeadingListStart
-<% for vol in d.volunteer %>
-    \jresumeSubheading
-      {<<vol.role>>}{<<vol.dates>>}
-      {<<vol.organization>>}{<<vol.location>>}
-<% if vol.description %>
-      \jresumeItemListStart
-        \jresumeItem{<<vol.description>>}
-      \jresumeItemListEnd
-<% endif %>
-<% endfor %>
-  \jresumeSubHeadingListEnd
-<% endif %>
-
-\end{document}
-"""
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-#  TEMPLATE 2 — Colored Professional (Debarghya Das / sb2nov style)
-#  Packages: latexsym, fullpage, titlesec, color, xcolor, verbatim,
-#            enumitem, hyperref, fancyhdr, tabularx, geometry
-#            — all in texlive-latex-extra (NO lmodern)
-# ──────────────────────────────────────────────────────────────────────────────
-
-_TEMPLATE_2 = r"""
-%-------------------------
-% Resume — Colored Professional Style
-% Inspired by Debarghya Das / sb2nov templates
-%-------------------------
-
-\documentclass[a4paper,10.5pt]{article}
-
-\usepackage{latexsym}
-\usepackage[empty]{fullpage}
-\usepackage{titlesec}
-\usepackage[usenames,dvipsnames]{color}
+\usepackage{url}
+\usepackage{parskip}
+\RequirePackage{color}
+\RequirePackage{graphicx}
 \usepackage[usenames,dvipsnames]{xcolor}
-\usepackage{verbatim}
-\usepackage{enumitem}
-\usepackage[hidelinks]{hyperref}
-\usepackage{fancyhdr}
+\usepackage[scale=0.9]{geometry}
 \usepackage{tabularx}
-\usepackage[left=0.75in,right=0.75in,top=0.6in,bottom=0.6in]{geometry}
+\usepackage{enumitem}
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+\usepackage{supertabular}
+\newlength{\fullcollw}
+\setlength{\fullcollw}{0.47\textwidth}
+\usepackage{titlesec}
+\usepackage{multicol}
+\usepackage{multirow}
+\titleformat{\section}{\Large\scshape\raggedright}{}{0em}{}[\titlerule]
+\titlespacing{\section}{0pt}{10pt}{10pt}
+\usepackage[unicode, draft=false]{hyperref}
+\definecolor{linkcolour}{rgb}{0,0.2,0.6}
+\hypersetup{colorlinks,breaklinks,urlcolor=linkcolour,linkcolor=linkcolour}
+\usepackage{fontawesome5}
 
-\pagestyle{fancy}
-\fancyhf{}
-\fancyfoot{}
-\renewcommand{\headrulewidth}{0pt}
-\renewcommand{\footrulewidth}{0pt}
+%--- job listing environments ---
+\newenvironment{jobshort}[2]{%
+  \begin{tabularx}{\linewidth}{@{}l X r@{}}
+  \textbf{#1} & \hfill & #2 \\[3.75pt]
+  \end{tabularx}%
+}{}
 
-\urlstyle{same}
-\raggedbottom
-\raggedright
-\setlength{\tabcolsep}{0in}
-\setlength{\parindent}{0pt}
-
-% Brand colour — navy blue
-\definecolor{cvblue}{RGB}{0,70,127}
-\definecolor{cvgray}{RGB}{100,100,100}
-
-% Section headings: colored, scshape, with a rule
-\titleformat{\section}{
-  \vspace{-6pt}\color{cvblue}\scshape\raggedright\large\bfseries
-}{}{0em}{}[\color{cvblue}\titlerule \vspace{-4pt}]
-
-%------- Custom commands -------
-
-\newcommand{\cvSubheading}[4]{
-  \vspace{-2pt}\item
-    \begin{tabular*}{\textwidth}[t]{l@{\extracolsep{\fill}}r}
-      \textbf{\color{cvblue}#1} & \textcolor{cvgray}{\small #2} \\
-      \textit{\small#3} & \textcolor{cvgray}{\textit{\small #4}} \\
-    \end{tabular*}\vspace{-6pt}
+\newenvironment{joblong}[2]{%
+  \begin{tabularx}{\linewidth}{@{}l X r@{}}
+  \textbf{#1} & \hfill & #2 \\[3.75pt]
+  \end{tabularx}%
+  \begin{minipage}[t]{\linewidth}
+  \begin{itemize}[nosep,after=\strut,leftmargin=1em,itemsep=3pt,label=--]
+}{%
+  \end{itemize}
+  \end{minipage}
 }
 
-\newcommand{\cvItem}[1]{
-  \item\small{{#1 \vspace{-2pt}}}
-}
-
-\newcommand{\cvProjectHeading}[2]{
-    \item
-    \begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}r}
-      \small#1 & \textcolor{cvgray}{\small #2} \\
-    \end{tabular*}\vspace{-7pt}
-}
-
-\newcommand{\cvSubHeadingListStart}{\begin{itemize}[leftmargin=0.0in, label={}]}
-\newcommand{\cvSubHeadingListEnd}{\end{itemize}}
-\newcommand{\cvItemListStart}{\begin{itemize}[leftmargin=0.18in]}
-\newcommand{\cvItemListEnd}{\end{itemize}\vspace{-4pt}}
-
-%-------------------------------------------
 \begin{document}
-
-%----------HEADING----------
-\begin{center}
-    {\Huge \textbf{\color{cvblue}<<d.name>>}} \\ \vspace{5pt}
-    \small
-    \href{mailto:<<d.email>>}{\underline{<<d.email | le>>}}
-<% if d.phone %> $\cdot$ <<d.phone>><% endif %>
-<% if d.linkedin %> $\cdot$ \href{<<d.linkedin>>}{\underline{<<d.linkedin | clean_url | le>>}}<% endif %>
-<% if d.github %> $\cdot$ \href{https://github.com/<<d.github>>}{\underline{github.com/<<d.github | le>>}}<% endif %>
-<% if d.portfolio_url %> $\cdot$ \href{<<d.portfolio_url>>}{\underline{<<d.portfolio_url | clean_url | le>>}}<% endif %>
-\end{center}
-
-%-----------SUMMARY-----------
-<% if d.summary %>
-\section{Professional Summary}
-  \cvSubHeadingListStart
-    \small{\item{<<d.summary>>}}
-  \cvSubHeadingListEnd
-<% endif %>
-
-%-----------EXPERIENCE-----------
-<% if d.experience %>
-\section{Experience}
-  \cvSubHeadingListStart
-<% for exp in d.experience %>
-    \cvSubheading
-      {<<exp.role>>}{<<exp.dates>>}
-      {<<exp.company>> $-$ <<exp.location>>}{}
-      \cvItemListStart
-<% for bullet in exp.bullets %>
-        \cvItem{<<bullet>>}
-<% endfor %>
-      \cvItemListEnd
-<% endfor %>
-  \cvSubHeadingListEnd
-<% endif %>
-
-%-----------EDUCATION-----------
-<% if d.education %>
-\section{Education}
-  \cvSubHeadingListStart
-<% for edu in d.education %>
-    \cvSubheading
-      {<<edu.institution>>}{<<edu.dates>>}
-      {<<edu.degree>><% if edu.field %> in <<edu.field>><% endif %>}<% if edu.gpa %>{GPA: <<edu.gpa>>}<% else %>{}<% endif %>
-<% if edu.courses %>
-      \cvItemListStart
-        \cvItem{Relevant Coursework: <<edu.courses>>}
-      \cvItemListEnd
-<% endif %>
-<% endfor %>
-  \cvSubHeadingListEnd
-<% endif %>
-
-%-----------TECHNICAL SKILLS-----------
-<% if d.skills %>
-\section{Technical Skills}
- \cvSubHeadingListStart
-    \small{\item{
-<% for skill in d.skills %>
-     \textbf{\color{cvblue}<<skill.category>>}{: <<skill.items>>} \\
-<% endfor %>
-    }}
- \cvSubHeadingListEnd
-<% endif %>
-
-%-----------PROJECTS-----------
-<% if d.projects %>
-\section{Projects}
-    \cvSubHeadingListStart
-<% for project in d.projects %>
-      \cvProjectHeading
-          {\textbf{\color{cvblue}<<project.title>>} $|$ \textit{\small <<project.technologies>>}}{}
-          \cvItemListStart
-            \cvItem{<<project.description>>}
-          \cvItemListEnd
-<% endfor %>
-    \cvSubHeadingListEnd
-<% endif %>
-
-%-----------HONORS & AWARDS-----------
-<% if d.awards %>
-\section{Honors \& Awards}
- \cvSubHeadingListStart
-    \small{\item{
-<% for award in d.awards %>
-      $\bullet$\ <<award>> \\
-<% endfor %>
-    }}
- \cvSubHeadingListEnd
-<% endif %>
-
-%-----------VOLUNTEER-----------
-<% if d.volunteer %>
-\section{Volunteer Experience}
-  \cvSubHeadingListStart
-<% for vol in d.volunteer %>
-    \cvSubheading
-      {<<vol.role>>}{<<vol.dates>>}
-      {<<vol.organization>><% if vol.location %> $-$ <<vol.location>><% endif %>}{}
-<% if vol.description %>
-      \cvItemListStart
-        \cvItem{<<vol.description>>}
-      \cvItemListEnd
-<% endif %>
-<% endfor %>
-  \cvSubHeadingListEnd
-<% endif %>
-
-\end{document}
-"""
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-#  TEMPLATE 3 — Two-Column Sidebar
-#  Left sidebar (dark bg via colortbl) + right main content via tabularx.
-#  Packages: latexsym, fullpage, titlesec, color, xcolor, colortbl,
-#            enumitem, hyperref, fancyhdr, tabularx, array, geometry
-#            — all in texlive-latex-extra (NO lmodern, NO tikz, NO minibox)
-# ──────────────────────────────────────────────────────────────────────────────
-
-_TEMPLATE_3 = r"""
-%-------------------------
-% Resume — Two-Column Sidebar Style
-% Left: dark sidebar with contact/skills/education
-% Right: main content (summary/experience/projects)
-%-------------------------
-
-\documentclass[a4paper,10pt]{article}
-
-\usepackage{latexsym}
-\usepackage[usenames,dvipsnames]{color}
-\usepackage[usenames,dvipsnames]{xcolor}
-\usepackage{colortbl}
-\usepackage{enumitem}
-\usepackage[hidelinks]{hyperref}
-\usepackage{fancyhdr}
-\usepackage{array}
-\usepackage{tabularx}
-\usepackage[left=0in,right=0.5in,top=0in,bottom=0in]{geometry}
-
 \pagestyle{empty}
-\setlength{\parindent}{0pt}
-\setlength{\parskip}{0pt}
-\setlength{\tabcolsep}{0pt}
 
-% Colours
-\definecolor{sidecolor}{RGB}{35,47,62}      % dark blue-gray
-\definecolor{sidetext}{RGB}{220,225,232}    % light gray-blue
-\definecolor{sidemuted}{RGB}{140,152,166}   % muted blue-gray
-\definecolor{siderule}{RGB}{65,80,95}       % rule color
-\definecolor{mainaccent}{RGB}{0,84,147}     % header blue
-\definecolor{maingray}{RGB}{90,90,90}       % body gray
-
-% Sidebar column type — dark background, light text, padding
-\newcolumntype{S}{>{\columncolor{sidecolor}\color{sidetext}\raggedright\arraybackslash\hspace{8pt}}p{0.32\textwidth}}
-% Main content column type
-\newcolumntype{M}{>{\raggedright\arraybackslash\hspace{8pt}}p{0.62\textwidth}}
-
-% Sidebar section heading
-\newcommand{\sideHead}[1]{%
-  \vspace{7pt}%
-  {\footnotesize\bfseries\color{sidetext}\MakeUppercase{#1}}\\[-1pt]%
-  {\color{siderule}\hrule height 0.4pt}%
-  \vspace{3pt}%
-}
-
-% Main section heading
-\newcommand{\mainHead}[1]{%
-  \vspace{6pt}%
-  {\large\bfseries\color{mainaccent} #1}\\[-4pt]%
-  {\color{mainaccent}\hrule height 0.6pt}%
-  \vspace{3pt}%
-}
-
-%-------------------------------------------
-\begin{document}
-
-\noindent
-\begin{tabular*}{\paperwidth}{@{}S@{\hspace{6pt}}M@{}}
-
-%=============== LEFT SIDEBAR ===============
-{\vspace*{12pt}
-{\Large\bfseries\color{white}<<d.name>>}
-\vspace{10pt}
-
-\sideHead{Contact}
-<% if d.email %>
-{\footnotesize\color{sidemuted}Email}\\
-{\footnotesize\href{mailto:<<d.email>>}{<<d.email | le>>}}\\
-[3pt]
-<% endif %>
-<% if d.phone %>
-{\footnotesize\color{sidemuted}Phone}\\
-{\footnotesize <<d.phone>>}\\
-[3pt]
+%--- HEADING ---
+\begin{tabularx}{\linewidth}{@{} C @{}}
+\Huge{<<d.name>>} \\[7.5pt]
+<% if d.github %>
+\href{https://github.com/<<d.github>>}{\raisebox{-0.05\height}\faGithub\ <<d.github>>}
+$|$
 <% endif %>
 <% if d.linkedin %>
-{\footnotesize\color{sidemuted}LinkedIn}\\
-{\footnotesize\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>}}\\
-[3pt]
-<% endif %>
-<% if d.github %>
-{\footnotesize\color{sidemuted}GitHub}\\
-{\footnotesize\href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}}\\
-[3pt]
+\href{<<d.linkedin>>}{\raisebox{-0.05\height}\faLinkedin\ <<d.linkedin | clean_url>>}
+$|$
 <% endif %>
 <% if d.portfolio_url %>
-{\footnotesize\color{sidemuted}Portfolio}\\
-{\footnotesize\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>}}\\
-[3pt]
+\href{<<d.portfolio_url>>}{\raisebox{-0.05\height}\faGlobe\ <<d.portfolio_url | clean_url>>}
+$|$
 <% endif %>
+\href{mailto:<<d.email>>}{\raisebox{-0.05\height}\faEnvelope\ <<d.email | le>>}
+$|$
+\href{tel:<<d.phone>>}{\raisebox{-0.05\height}\faMobile\ <<d.phone>>} \\
+\end{tabularx}
 
-<% if d.skills %>
-\sideHead{Skills}
-<% for skill in d.skills %>
-{\footnotesize\bfseries\color{white}<<skill.category>>}\\
-{\footnotesize\color{sidemuted}<<skill.items>>}\\
-[4pt]
-<% endfor %>
-<% endif %>
-
-<% if d.education %>
-\sideHead{Education}
-<% for edu in d.education %>
-{\footnotesize\bfseries\color{white}<<edu.institution>>}\\
-{\footnotesize\color{sidemuted}<<edu.degree>><% if edu.field %>, <<edu.field>><% endif %>}\\
-{\footnotesize\color{sidemuted}<<edu.dates>><% if edu.gpa %> $|$ GPA: <<edu.gpa>><% endif %>}\\
-[4pt]
-<% endfor %>
-<% endif %>
-
-<% if d.awards %>
-\sideHead{Awards}
-\begin{itemize}[noitemsep,topsep=0pt,leftmargin=0.8em,label={\tiny$\bullet$}]
-<% for award in d.awards %>
-  \item {\footnotesize\color{sidemuted}<<award>>}
-<% endfor %>
-\end{itemize}
-<% endif %>
-}
-&
-%=============== RIGHT MAIN ===============
-{\vspace*{10pt}
-
+%--- SUMMARY ---
 <% if d.summary %>
-\mainHead{Professional Summary}
-{\small <<d.summary>>}
+\section{Summary}
+<<d.summary>>
 <% endif %>
 
+%--- EXPERIENCE ---
 <% if d.experience %>
-\mainHead{Experience}
+\section{Work Experience}
 <% for exp in d.experience %>
-{\small\bfseries\color{mainaccent}<<exp.role>>} \hfill {\small\color{maingray}\textit{<<exp.dates>>}}\\
-{\small\textit{<<exp.company>>}<% if exp.location %>, \textit{<<exp.location>>}<% endif %>}
-\begin{itemize}[noitemsep,topsep=2pt,leftmargin=1em,label={\tiny$\bullet$}]
+<% if exp.bullets %>
+\begin{joblong}{<<exp.role>> $-$ <<exp.company>>, <<exp.location>>}{<<exp.dates>>}
 <% for bullet in exp.bullets %>
-  \item {\small <<bullet>>}
+\item <<bullet>>
+<% endfor %>
+\end{joblong}
+<% else %>
+\begin{jobshort}{<<exp.role>> $-$ <<exp.company>>, <<exp.location>>}{<<exp.dates>>}
+\end{jobshort}
+<% endif %>
+<% endfor %>
+<% endif %>
+
+%--- PROJECTS ---
+<% if d.projects %>
+\section{Projects}
+\begin{tabularx}{\linewidth}{@{}l r@{}}
+<% for project in d.projects %>
+\textbf{<<project.title>>} & \hfill \textit{<<project.technologies>>} \\[3.75pt]
+\multicolumn{2}{@{}X@{}}{<<project.description>>} \\[4pt]
+<% endfor %>
+\end{tabularx}
+<% endif %>
+
+%--- EDUCATION ---
+<% if d.education %>
+\section{Education}
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+<% for edu in d.education %>
+<<edu.dates>> & <<edu.degree>> in \textbf{<<edu.field>>} at \textbf{<<edu.institution>>}<% if edu.gpa %> \hfill (GPA: <<edu.gpa>>)<% endif %> \\
+<% endfor %>
+\end{tabularx}
+<% endif %>
+
+%--- SKILLS ---
+<% if d.skills %>
+\section{Skills}
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+<% for skill in d.skills %>
+\textbf{<<skill.category>>} & \normalsize{<<skill.items>>}\\
+<% endfor %>
+\end{tabularx}
+<% endif %>
+
+\vfill
+\center{\footnotesize Last updated: \today}
+\end{document}
+"""
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  TEMPLATE 2 — Data Science / Tech Resume (TLC-inspired, self-contained)
+#  Original: Timmy Chan  github.com/TimmyChan  |  MIT License
+#  Changes : TLCresume.sty replaced with inline standard-package equivalent;
+#            multi-file structure collapsed to single self-contained file.
+# ══════════════════════════════════════════════════════════════════════════════
+
+_TEMPLATE_2 = r"""
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.65in, top=0.55in, bottom=0.55in]{geometry}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{titlesec}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage[pdftex]{hyperref}
+\usepackage{parskip}
+
+\hypersetup{colorlinks=true, urlcolor=MidnightBlue, linkcolor=black}
+\pagestyle{empty}
+
+% Section line style
+\titleformat{\section}
+  {\normalfont\normalsize\bfseries\uppercase}
+  {}{0pt}{}[\color{black}\titlerule]
+\titlespacing*{\section}{0pt}{8pt}{4pt}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+
+\begin{document}
+
+%--- HEADER ---
+\noindent
+\begin{tabularx}{\textwidth}{@{} X R{5.5cm} @{}}
+  {\LARGE\textbf{<<d.name>>}} & \small <<d.phone>> \\
+<% if d.portfolio_url %>
+  \small\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>} & \small\href{mailto:<<d.email>>}{<<d.email | le>>} \\
+<% else %>
+   & \small\href{mailto:<<d.email>>}{<<d.email | le>>} \\
+<% endif %>
+<% if d.github %>
+  \small\href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>} &
+<% if d.linkedin %>
+  \small\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>} \\
+<% else %>
+   \\
+<% endif %>
+<% endif %>
+\end{tabularx}
+\vspace{-2pt}
+
+%--- OBJECTIVE ---
+<% if d.summary %>
+\section{Objective}
+<<d.summary>>
+<% endif %>
+
+%--- SKILLS ---
+<% if d.skills %>
+\section{Skills}
+\begin{tabularx}{\textwidth}{@{} L{3.4cm} X @{}}
+<% for skill in d.skills %>
+\textbf{<<skill.category>>} & <<skill.items>> \\[2pt]
+<% endfor %>
+\end{tabularx}
+<% endif %>
+
+%--- TECHNICAL EXPERIENCE ---
+<% if d.experience %>
+\section{Technical Experience}
+<% for exp in d.experience %>
+\noindent
+\textbf{<<exp.role>>} \hfill \textit{<<exp.dates>>} \\
+\textit{<<exp.company>>} \hfill \textit{<<exp.location>>}
+\begin{itemize}[leftmargin=1.5em, itemsep=-2pt, topsep=2pt, parsep=0pt]
+<% for bullet in exp.bullets %>
+\item <<bullet>>
 <% endfor %>
 \end{itemize}
 \vspace{3pt}
 <% endfor %>
 <% endif %>
 
+%--- PROJECTS ---
 <% if d.projects %>
-\mainHead{Projects}
+\section{Projects}
 <% for project in d.projects %>
-{\small\bfseries\color{mainaccent}<<project.title>>}
-<% if project.technologies %>
-  \hfill {\small\color{maingray}\textit{<<project.technologies>>}}
-<% endif %>\\
-{\small <<project.description>>}
+\noindent\textbf{<<project.title>>} \hfill \textit{<<project.technologies>>} \\
+<<project.description>>
+\vspace{5pt}
+<% endfor %>
+<% endif %>
+
+%--- EDUCATION ---
+<% if d.education %>
+\section{Education}
+<% for edu in d.education %>
+\noindent
+\textbf{<<edu.degree>>} in <<edu.field>> \hfill \textit{<<edu.dates>>} \\
+<<edu.institution>><% if edu.gpa %>, GPA: <<edu.gpa>><% endif %>
 \vspace{3pt}
 <% endfor %>
 <% endif %>
 
-<% if d.volunteer %>
-\mainHead{Volunteer}
+%--- ACTIVITIES ---
+<% if d.awards or d.volunteer %>
+\section{Activities}
+\begin{itemize}[leftmargin=1.5em, itemsep=-2pt, topsep=2pt]
+<% for award in d.awards %>
+\item <<award>>
+<% endfor %>
 <% for vol in d.volunteer %>
-{\small\bfseries\color{mainaccent}<<vol.role>>} --- \textit{<<vol.organization>>}
-<% if vol.location %>, {\small\color{maingray}<<vol.location>>}<% endif %>
-\hfill {\small\color{maingray}\textit{<<vol.dates>>}}
-<% if vol.description %>\\{\small <<vol.description>>}<% endif %>
-\vspace{3pt}
+\item \textbf{<<vol.role>>}, <<vol.organization>> \hfill \textit{<<vol.dates>>}
 <% endfor %>
+\end{itemize}
 <% endif %>
-}
-
-\end{tabular*}
 
 \end{document}
 """
 
-# ──────────────────────────────────────────────────────────────────────────────
-#  TEMPLATE 4 — ATS Classic (original Anubhav Singh style)
-# ──────────────────────────────────────────────────────────────────────────────
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  resume.cls  — written to temp dir at runtime for Template 3
+#  Replicates the FANGPath / sb2nov resume.cls behaviour
+# ══════════════════════════════════════════════════════════════════════════════
+
+_RESUME_CLS = r"""
+\ProvidesClass{resume}[Resume class - FAANG Path style]
+\LoadClass[11pt,letterpaper]{article}
+
+\usepackage[parfill]{parskip}
+\usepackage{array}
+\usepackage{hyperref}
+\pagestyle{empty}
+
+%--- Name ---
+\def\name#1{\def\@name{#1}}
+\def\@name{}
+
+%--- Addresses (up to 3 lines) ---
+\newcounter{addrcount}
+\setcounter{addrcount}{0}
+
+\def\address#1{%
+  \stepcounter{addrcount}%
+  \expandafter\gdef\csname @addrline\theaddrcount\endcsname{#1}%
+}
+
+\newcommand{\@printaddr}[1]{%
+  \begingroup
+    \def\\{~$\diamond$~}%
+    \centerline{\csname @addrline#1\endcsname}%
+  \endgroup
+  \par\smallskip
+}
+
+\newcommand{\printname}{%
+  \centerline{\Huge\scshape\textbf{\@name}}\medskip
+}
+
+\let\@origdocument=\document
+\renewcommand{\document}{%
+  \@origdocument
+  \printname
+  \ifnum\value{addrcount}>0 \@printaddr{1}\fi
+  \ifnum\value{addrcount}>1 \@printaddr{2}\fi
+  \ifnum\value{addrcount}>2 \@printaddr{3}\fi
+  \vspace{2pt}
+}
+
+%--- rSection environment ---
+\newenvironment{rSection}[1]{%
+  \medskip
+  \MakeUppercase{\textbf{#1}}%
+  \medskip\hrule\vspace{2pt}
+  \begin{list}{}{%
+    \setlength{\leftmargin}{1.5em}%
+  }%
+  \item[]%
+}{%
+  \end{list}%
+}
+"""
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  TEMPLATE 3 — FAANG Path / sb2nov Classic Resume
+#  Original: FANGPath.com  |  MIT License
+#  Changes : resume.cls written at runtime; dummy data → Jinja2 variables
+# ══════════════════════════════════════════════════════════════════════════════
+
+_TEMPLATE_3 = r"""
+\documentclass{resume}
+\usepackage[left=0.4in,top=0.4in,right=0.4in,bottom=0.4in]{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\hypersetup{colorlinks=true, urlcolor=blue, linkcolor=black}
+
+\newcommand{\tab}[1]{\hspace{.2667\textwidth}\rlap{#1}}
+\newcommand{\itab}[1]{\hspace{0em}\rlap{#1}}
+
+\name{<<d.name>>}
+\address{<<d.phone>> \\ \href{mailto:<<d.email>>}{<<d.email | le>>}}
+<% if d.portfolio_url or d.github or d.linkedin %>
+\address{%
+<% if d.portfolio_url %>
+\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>}%
+<% endif %>
+<% if d.github %>
+ \\ \href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}%
+<% endif %>
+<% if d.linkedin %>
+ \\ \href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>}%
+<% endif %>
+}
+<% endif %>
+
+\begin{document}
+
+%--- OBJECTIVE ---
+<% if d.summary %>
+\begin{rSection}{Objective}
+<<d.summary>>
+\end{rSection}
+<% endif %>
+
+%--- EDUCATION ---
+<% if d.education %>
+\begin{rSection}{Education}
+<% for edu in d.education %>
+{\bf <<edu.degree>>}, <<edu.institution>> \hfill {<<edu.dates>>}\\
+Field of Study: <<edu.field>><% if edu.gpa %>; GPA: <<edu.gpa>><% endif %>\\
+<% if edu.courses %>
+Relevant Coursework: <<edu.courses>>
+<% endif %>
+<% endfor %>
+\end{rSection}
+<% endif %>
+
+%--- SKILLS ---
+<% if d.skills %>
+\begin{rSection}{Skills}
+\begin{tabular}{ @{} >{\bfseries}l @{\hspace{6ex}} l }
+<% for skill in d.skills %>
+<<skill.category>> & <<skill.items>> \\
+<% endfor %>
+\end{tabular}
+\end{rSection}
+<% endif %>
+
+%--- EXPERIENCE ---
+<% if d.experience %>
+\begin{rSection}{Experience}
+<% for exp in d.experience %>
+\textbf{<<exp.role>>} \hfill <<exp.dates>>\\
+<<exp.company>> \hfill \textit{<<exp.location>>}
+\begin{itemize}[itemsep=-3pt, topsep=2pt]
+<% for bullet in exp.bullets %>
+\item <<bullet>>
+<% endfor %>
+\end{itemize}
+<% endfor %>
+\end{rSection}
+<% endif %>
+
+%--- PROJECTS ---
+<% if d.projects %>
+\begin{rSection}{Projects}
+\vspace{-1.25em}
+<% for project in d.projects %>
+\item \textbf{<<project.title>>.} {<<project.description>>. \textit{Tech: <<project.technologies>>}.}
+<% endfor %>
+\end{rSection}
+<% endif %>
+
+%--- AWARDS ---
+<% if d.awards %>
+\begin{rSection}{Honors and Awards}
+\begin{itemize}[itemsep=-3pt, topsep=2pt]
+<% for award in d.awards %>
+\item <<award>>
+<% endfor %>
+\end{itemize}
+\end{rSection}
+<% endif %>
+
+%--- VOLUNTEER ---
+<% if d.volunteer %>
+\begin{rSection}{Leadership \& Volunteer}
+\begin{itemize}[itemsep=-3pt, topsep=2pt]
+<% for vol in d.volunteer %>
+\item \textbf{<<vol.role>>}, <<vol.organization>>, <<vol.location>> \hfill \textit{<<vol.dates>>}\\
+<<vol.description>>
+<% endfor %>
+\end{itemize}
+\end{rSection}
+<% endif %>
+
+\end{document}
+"""
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  TEMPLATE 4 — Anubhav Singh Developer Resume
+#  Original: github.com/xprilion  |  MIT License
+#  Changes : marvosym removed; resumeItemNoBold fixed; Jinja2 variables added
+# ══════════════════════════════════════════════════════════════════════════════
 
 _TEMPLATE_4 = r"""
-%------------------------
-% Resume Template 4 — ATS Classic
-% Original Author : Anubhav Singh (github.com/xprilion)
-% Adapted by AI Resume Builder
-%------------------------
-
 \documentclass[a4paper,11pt]{article}
 
 \usepackage{latexsym}
@@ -689,17 +552,11 @@ _TEMPLATE_4 = r"""
 }{}{0em}{}[\color{black}\titlerule \vspace{-6pt}]
 
 \newcommand{\resumeItem}[2]{
-  \item\small{
-    \textbf{#1}{: #2 \vspace{-2pt}}
-  }
+  \item\small{\textbf{#1}{: #2 \vspace{-2pt}}}
 }
-
 \newcommand{\resumeItemNoBold}[1]{
-  \item\small{
-    {#1 \vspace{-2pt}}
-  }
+  \item\small{{#1 \vspace{-2pt}}}
 }
-
 \newcommand{\resumeSubheading}[4]{
   \vspace{-1pt}\item
     \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
@@ -707,11 +564,8 @@ _TEMPLATE_4 = r"""
       \textit{#3} & \textit{#4} \\
     \end{tabular*}\vspace{-5pt}
 }
-
 \newcommand{\resumeSubItem}[2]{\resumeItem{#1}{#2}\vspace{-3pt}}
-
 \renewcommand{\labelitemii}{$\circ$}
-
 \newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=*]}
 \newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
 \newcommand{\resumeItemListStart}{\begin{itemize}}
@@ -719,7 +573,7 @@ _TEMPLATE_4 = r"""
 
 \begin{document}
 
-%----------HEADING-----------------
+%--- HEADING ---
 \begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}r}
   \textbf{{\LARGE <<d.name>>}} & Email: \href{mailto:<<d.email>>}{<<d.email | le>>}\\
 <% if d.portfolio_url %>
@@ -732,13 +586,11 @@ _TEMPLATE_4 = r"""
 <% endif %>
 \end{tabular*}
 
-%----------PROFILE SUMMARY-----------------
 <% if d.summary %>
 \section{Profile Summary}
 <<d.summary>>
 <% endif %>
 
-%-----------EDUCATION-----------------
 <% if d.education %>
 \section{Education}
   \resumeSubHeadingListStart
@@ -753,7 +605,6 @@ _TEMPLATE_4 = r"""
   \resumeSubHeadingListEnd
 <% endif %>
 
-%-----------SKILLS-----------------
 <% if d.skills %>
 \vspace{-5pt}
 \section{Skills Summary}
@@ -764,7 +615,6 @@ _TEMPLATE_4 = r"""
 \resumeSubHeadingListEnd
 <% endif %>
 
-%-----------EXPERIENCE-----------------
 <% if d.experience %>
 \vspace{-5pt}
 \section{Experience}
@@ -782,7 +632,6 @@ _TEMPLATE_4 = r"""
   \resumeSubHeadingListEnd
 <% endif %>
 
-%-----------PROJECTS-----------------
 <% if d.projects %>
 \vspace{-5pt}
 \section{Projects}
@@ -794,7 +643,6 @@ _TEMPLATE_4 = r"""
 \resumeSubHeadingListEnd
 <% endif %>
 
-%-----------AWARDS-----------------
 <% if d.awards %>
 \vspace{-5pt}
 \section{Honors and Awards}
@@ -806,7 +654,6 @@ _TEMPLATE_4 = r"""
 \end{description}
 <% endif %>
 
-%-----------VOLUNTEER-----------------
 <% if d.volunteer %>
 \vspace{-5pt}
 \section{Volunteer Experience}
@@ -823,7 +670,39 @@ _TEMPLATE_4 = r"""
 """
 
 
-# ── Template registry ─────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+#  DATA NORMALISATION
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _normalize(data: dict) -> dict:
+    defaults = {
+        "name": "", "email": "", "phone": "",
+        "portfolio_url": "", "github": "", "linkedin": "",
+        "summary": "",
+        "education": [], "skills": [], "experience": [],
+        "projects": [], "awards": [], "volunteer": [],
+    }
+    for k, v in defaults.items():
+        if k not in data or data[k] is None:
+            data[k] = v
+
+    for edu in data.get("education", []):
+        edu.setdefault("gpa", "")
+        edu.setdefault("courses", "")
+
+    for exp in data.get("experience", []):
+        exp.setdefault("bullets", [])
+
+    for vol in data.get("volunteer", []):
+        vol.setdefault("organization", vol.get("role", ""))
+        vol.setdefault("description", "")
+
+    return data
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  PUBLIC ENTRY POINT
+# ══════════════════════════════════════════════════════════════════════════════
 
 _TEMPLATES = {
     1: _TEMPLATE_1,
@@ -833,48 +712,46 @@ _TEMPLATES = {
 }
 
 
-# ── Data normalisation ────────────────────────────────────────────────────────
+def generate_pdf(raw_data: dict, template_id: int = 4) -> bytes:
+    """
+    Generate a PDF resume from structured data using one of the 4 LaTeX templates.
 
-def _normalize(data: dict) -> dict:
-    """Ensure every expected key exists, using safe defaults for missing ones."""
-    defaults: dict = {
-        "name":          "Your Name",
-        "email":         "",
-        "phone":         "",
-        "portfolio_url": "",
-        "github":        "",
-        "linkedin":      "",
-        "summary":       "",
-        "education":     [],
-        "skills":        [],
-        "experience":    [],
-        "projects":      [],
-        "awards":        [],
-        "volunteer":     [],
-    }
-    for key, default in defaults.items():
-        if key not in data or data[key] is None:
-            data[key] = default
+    Parameters
+    ----------
+    raw_data    : dict  — structured resume data (from main.py AI pipeline)
+    template_id : int  — 1, 2, 3, or 4  (defaults to 4)
 
-    for edu in data.get("education", []):
-        edu.setdefault("gpa",     "")
-        edu.setdefault("courses", "")
+    Returns
+    -------
+    bytes  — compiled PDF content
 
-    for exp in data.get("experience", []):
-        exp.setdefault("bullets", [])
+    Raises
+    ------
+    RuntimeError if pdflatex is not installed or compilation fails.
+    """
+    if shutil.which("pdflatex") is None:
+        raise RuntimeError(
+            "pdflatex not found on PATH.\n"
+            "  macOS  : brew install --cask mactex  OR  brew install --cask basictex\n"
+            "           then: sudo tlmgr install fontawesome5 enumitem titlesec fancyhdr\n"
+            "  Linux  : sudo apt install texlive-latex-extra texlive-fonts-extra\n"
+            "  Docker : texlive packages installed in Dockerfile automatically."
+        )
 
-    for vol in data.get("volunteer", []):
-        vol.setdefault("organization", vol.get("role", ""))
-        vol.setdefault("description",  "")
+    template_src = _TEMPLATES.get(template_id, _TEMPLATE_4)
 
-    return data
+    data    = _normalize(dict(raw_data))
+    escaped = _escape_data(data)
 
+    env       = _make_jinja_env()
+    latex_src = env.from_string(template_src).render(d=escaped)
 
-# ── PDF compilation ───────────────────────────────────────────────────────────
-
-def _compile_latex(latex_src: str) -> bytes:
-    """Write latex_src to a temp dir, run pdflatex twice, return PDF bytes."""
     with tempfile.TemporaryDirectory() as tmpdir:
+        # Template 3 needs resume.cls in the same directory as the .tex file
+        if template_id == 3:
+            with open(os.path.join(tmpdir, "resume.cls"), "w", encoding="utf-8") as fh:
+                fh.write(_RESUME_CLS)
+
         tex_path = os.path.join(tmpdir, "resume.tex")
         pdf_path = os.path.join(tmpdir, "resume.pdf")
         log_path = os.path.join(tmpdir, "resume.log")
@@ -891,85 +768,20 @@ def _compile_latex(latex_src: str) -> bytes:
         ]
 
         result = None
-        for _ in range(2):
+        for _ in range(2):   # two passes for stable layout
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
 
         if not os.path.exists(pdf_path):
             log_tail = ""
             if os.path.exists(log_path):
                 with open(log_path, encoding="utf-8", errors="ignore") as lf:
-                    full_log = lf.read()
-                error_lines = [ln for ln in full_log.splitlines() if ln.startswith("!")]
-                log_tail = "\n".join(error_lines[:10]) or full_log[-2000:]
+                    lines = lf.read().splitlines()
+                errors = [l for l in lines if l.startswith("!")]
+                log_tail = "\n".join(errors[:10]) or "\n".join(lines[-30:])
             raise RuntimeError(
-                f"pdflatex failed (exit code {result.returncode}).\n"
-                f"LaTeX errors:\n{log_tail}"
+                f"pdflatex failed (exit {result.returncode}).\n"
+                f"Errors:\n{log_tail}"
             )
 
         with open(pdf_path, "rb") as fh:
             return fh.read()
-
-
-# ── Public API ────────────────────────────────────────────────────────────────
-
-def generate_pdf(raw_data: dict, template_id: int = 4) -> bytes:
-    """
-    Build a PDF resume from structured resume data using the specified template.
-
-    Parameters
-    ----------
-    raw_data    : Structured resume dict (from AI pipeline).
-    template_id : 1 = Classic, 2 = Modern, 3 = Sidebar, 4 = ATS Classic.
-
-    Returns
-    -------
-    bytes  — Raw PDF file contents.
-
-    Raises
-    ------
-    RuntimeError  if pdflatex is not installed or compilation fails.
-    ValueError    if template_id is not in 1–4.
-    """
-    if shutil.which("pdflatex") is None:
-        raise RuntimeError(
-            "pdflatex not found on PATH.\n"
-            "  macOS : brew install --cask mactex\n"
-            "  Linux : sudo apt install texlive-latex-extra texlive-fonts-recommended\n"
-            "  Docker: see Dockerfile."
-        )
-
-    if template_id not in _TEMPLATES:
-        raise ValueError(f"template_id must be 1–4, got {template_id!r}")
-
-    data    = _normalize(dict(raw_data))
-    escaped = _escape_data(data)
-    env     = _make_jinja_env()
-    latex_src = env.from_string(_TEMPLATES[template_id]).render(d=escaped)
-    return _compile_latex(latex_src)
-
-
-def generate_all_pdfs(raw_data: dict) -> dict:
-    """
-    Generate PDFs for all 4 templates in parallel.
-
-    Returns
-    -------
-    dict  {template_id (int): pdf_bytes (bytes)}
-    """
-    # Normalise and escape once, then render each template
-    data    = _normalize(dict(raw_data))
-    escaped = _escape_data(data)
-    env     = _make_jinja_env()
-
-    def _render_and_compile(tid: int) -> tuple[int, bytes]:
-        latex_src = env.from_string(_TEMPLATES[tid]).render(d=escaped)
-        return tid, _compile_latex(latex_src)
-
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        futures = {pool.submit(_render_and_compile, tid): tid for tid in _TEMPLATES}
-        results = {}
-        for future in futures:
-            tid, pdf_bytes = future.result()
-            results[tid] = pdf_bytes
-
-    return results

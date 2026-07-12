@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Resume Builder — 4 Professional Templates</title>
-  <meta name="description" content="Upload your resume, paste a job description, choose from 4 professional templates, and download a tailored PDF in seconds — powered by Groq AI." />
+  <title>AI Resume Builder</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
   <div class="app">
 
-    <!-- ── Header ── -->
     <header class="header">
       <div class="logo-wrap">
         <div class="logo-icon">✦</div>
         <div class="logo-text">
           <h1>AI Resume Builder</h1>
-          <p>Upload your resume · Paste the JD · Choose a template · Download your tailored PDF</p>
+          <p>Upload your resume · Pick a template · Paste the JD · Download your tailored PDF</p>
         </div>
       </div>
     </header>
@@ -31,10 +31,9 @@
         </div>
 
         <div class="drop-zone" id="drop-zone" role="button" tabindex="0"
-             aria-label="Upload resume — click or drag a file here">
+          aria-label="Upload resume — click or drag a file here">
           <input type="file" id="file-input" accept=".pdf,.txt" hidden />
 
-          <!-- idle state -->
           <div id="dz-idle">
             <div class="dz-icon">📄</div>
             <p class="dz-title">Drag &amp; drop your resume here</p>
@@ -42,131 +41,123 @@
             <span class="badge">PDF · TXT</span>
           </div>
 
-          <!-- file selected state -->
           <div id="dz-done" hidden>
             <div class="dz-icon">✅</div>
             <p class="dz-filename" id="dz-filename"></p>
-            <button class="btn-text-sm" id="btn-change" type="button">
-              Change file
-            </button>
+            <button class="btn-text-sm" id="btn-change" type="button">Change file</button>
           </div>
         </div>
       </div>
 
-      <!-- ── Step 2 : Paste JD ── -->
-      <div class="card" id="card-jd">
+      <!-- ── Step 2 : Choose Template ── -->
+      <div class="card" id="card-template">
         <div class="card-label">
           <span class="step-num">2</span>
+          <h2>Choose a Template</h2>
+        </div>
+
+        <div class="tmpl-grid">
+
+          <label class="tmpl-card">
+            <input type="radio" name="template" value="1" />
+            <div class="tmpl-preview">
+              <div class="tmpl-header">
+                <span class="tmpl-number">T1</span>
+                <span class="tmpl-name">Modern CV</span>
+              </div>
+              <p class="tmpl-desc">
+                Centered header with social icons, tabular project list, last-updated footer.
+                Great for creative / academic roles.
+              </p>
+              <div class="tmpl-tags">
+                <span class="tag">Icons</span>
+                <span class="tag">Tabular</span>
+                <span class="tag">A4</span>
+              </div>
+            </div>
+          </label>
+
+          <label class="tmpl-card">
+            <input type="radio" name="template" value="2" />
+            <div class="tmpl-preview">
+              <div class="tmpl-header">
+                <span class="tmpl-number">T2</span>
+                <span class="tmpl-name">Data Science</span>
+              </div>
+              <p class="tmpl-desc">
+                Two-column header, skills table with categories, clean rule separators.
+                Built for data / ML roles.
+              </p>
+              <div class="tmpl-tags">
+                <span class="tag">Two-column</span>
+                <span class="tag">Skills table</span>
+                <span class="tag">A4</span>
+              </div>
+            </div>
+          </label>
+
+          <label class="tmpl-card">
+            <input type="radio" name="template" value="3" />
+            <div class="tmpl-preview">
+              <div class="tmpl-header">
+                <span class="tmpl-number">T3</span>
+                <span class="tmpl-name">FAANG Path</span>
+              </div>
+              <p class="tmpl-desc">
+                Classic one-page layout with bold uppercase sections and diamond-separated contact.
+                Popular for big-tech applications.
+              </p>
+              <div class="tmpl-tags">
+                <span class="tag">Classic</span>
+                <span class="tag">One-page</span>
+                <span class="tag">Letter</span>
+              </div>
+            </div>
+          </label>
+
+          <label class="tmpl-card">
+            <input type="radio" name="template" value="4" checked />
+            <div class="tmpl-preview">
+              <div class="tmpl-header">
+                <span class="tmpl-number">T4</span>
+                <span class="tmpl-name">Developer ⭐</span>
+              </div>
+              <p class="tmpl-desc">
+                Compact ATS-friendly layout with scshape section headings and nested bullet lists.
+                Best all-round for tech roles.
+              </p>
+              <div class="tmpl-tags">
+                <span class="tag">ATS-friendly</span>
+                <span class="tag">Compact</span>
+                <span class="tag">A4</span>
+              </div>
+            </div>
+          </label>
+
+        </div>
+      </div>
+
+      <!-- ── Step 3 : Paste JD ── -->
+      <div class="card" id="card-jd">
+        <div class="card-label">
+          <span class="step-num">3</span>
           <h2>Paste Job Description</h2>
         </div>
 
-        <textarea
-          id="jd-input"
-          rows="10"
-          placeholder="Paste the full job description here — the more detail, the better the tailoring. Include the role requirements, preferred skills, company context, and any technology keywords."
-        ></textarea>
+        <textarea id="jd-input" rows="10"
+          placeholder="Paste the full job description here — the more detail, the better the tailoring. Include role requirements, preferred skills, company context, and technology keywords."></textarea>
         <p class="char-count"><span id="jd-chars">0</span> characters</p>
       </div>
 
-      <!-- ── Step 3 : Choose Template ── -->
-      <div class="card" id="card-template">
-        <div class="card-label">
-          <span class="step-num">3</span>
-          <h2>Choose Your Template</h2>
-        </div>
-
-        <div class="template-grid" id="template-grid">
-
-          <!-- Template 1 — Classic -->
-          <div class="template-card" id="tcard-1" data-tid="1" tabindex="0" role="button"
-               aria-pressed="false" aria-label="Select Template 1: Classic">
-            <div class="tcard-preview">
-              <img src="previews/t1.png" alt="Classic resume template preview" loading="lazy" />
-            </div>
-            <div class="tcard-info">
-              <span class="tcard-num">T1</span>
-              <div>
-                <p class="tcard-name">Classic</p>
-                <p class="tcard-desc">Clean &amp; traditional</p>
-              </div>
-              <span class="tcard-check" aria-hidden="true">✓</span>
-            </div>
-          </div>
-
-          <!-- Template 2 — Modern -->
-          <div class="template-card" id="tcard-2" data-tid="2" tabindex="0" role="button"
-               aria-pressed="false" aria-label="Select Template 2: Modern">
-            <div class="tcard-preview">
-              <img src="previews/t2.png" alt="Modern resume template preview" loading="lazy" />
-            </div>
-            <div class="tcard-info">
-              <span class="tcard-num">T2</span>
-              <div>
-                <p class="tcard-name">Modern</p>
-                <p class="tcard-desc">Bold &amp; colorful</p>
-              </div>
-              <span class="tcard-check" aria-hidden="true">✓</span>
-            </div>
-          </div>
-
-          <!-- Template 3 — Sidebar -->
-          <div class="template-card" id="tcard-3" data-tid="3" tabindex="0" role="button"
-               aria-pressed="false" aria-label="Select Template 3: Sidebar">
-            <div class="tcard-preview">
-              <img src="previews/t3.png" alt="Sidebar resume template preview" loading="lazy" />
-            </div>
-            <div class="tcard-info">
-              <span class="tcard-num">T3</span>
-              <div>
-                <p class="tcard-name">Sidebar</p>
-                <p class="tcard-desc">Two-column layout</p>
-              </div>
-              <span class="tcard-check" aria-hidden="true">✓</span>
-            </div>
-          </div>
-
-          <!-- Template 4 — ATS Classic -->
-          <div class="template-card selected" id="tcard-4" data-tid="4" tabindex="0" role="button"
-               aria-pressed="true" aria-label="Select Template 4: ATS Classic">
-            <div class="tcard-preview">
-              <img src="previews/t4.png" alt="ATS Classic resume template preview" loading="lazy" />
-            </div>
-            <div class="tcard-info">
-              <span class="tcard-num">T4</span>
-              <div>
-                <p class="tcard-name">ATS Classic</p>
-                <p class="tcard-desc">ATS-optimised</p>
-              </div>
-              <span class="tcard-check" aria-hidden="true">✓</span>
-            </div>
-          </div>
-
-        </div><!-- /.template-grid -->
-
-        <!-- All 4 toggle -->
-        <div class="all-toggle-wrap">
-          <label class="all-toggle" id="all-toggle-label">
-            <input type="checkbox" id="chk-all-templates" />
-            <span class="all-toggle-slider"></span>
-            <span class="all-toggle-text">
-              <strong>Download all 4 templates as a ZIP</strong>
-              <small>AI runs once — generates all versions in parallel</small>
-            </span>
-          </label>
-        </div>
-
-      </div><!-- /#card-template -->
-
-      <!-- ── Generate button + status ── -->
+      <!-- ── Generate ── -->
       <div class="gen-section">
-        <p class="gen-note" id="gen-note">Typically takes 20 – 35 seconds</p>
+        <p class="gen-note">Typically takes 20 – 35 seconds</p>
 
         <button class="btn-generate" id="btn-generate" type="button">
           <span id="btn-label">Generate My Resume</span>
           <span class="btn-arrow" id="btn-arrow">→</span>
         </button>
 
-        <!-- progress -->
         <div class="status-box" id="status-box" hidden>
           <div class="progress-track">
             <div class="progress-fill" id="progress-fill"></div>
@@ -174,53 +165,30 @@
           <p class="status-msg" id="status-msg">Starting…</p>
         </div>
 
-        <!-- error -->
         <div class="result-box result-error" id="error-box" hidden>
           <span class="result-icon">⚠️</span>
           <p id="error-msg"></p>
           <button class="btn-action" id="btn-retry" type="button">Try Again</button>
         </div>
 
-        <!-- success — single template -->
         <div class="result-box result-success" id="success-box" hidden>
           <span class="result-icon">🎉</span>
           <p>Your tailored resume is downloading!</p>
-          <button class="btn-action" id="btn-redownload" type="button">
-            Download Again
-          </button>
+          <button class="btn-action" id="btn-redownload" type="button">Download Again</button>
         </div>
-
-        <!-- success — all 4 templates -->
-        <div class="result-box result-success" id="success-all-box" hidden>
-          <span class="result-icon">🎉</span>
-          <p>All 4 resume templates are ready!</p>
-          <div class="multi-dl-row" id="multi-dl-row">
-            <button class="btn-dl-t" id="btn-dl-zip" type="button">
-              📦 Download ZIP (all 4)
-            </button>
-            <button class="btn-dl-t btn-dl-1" id="btn-dl-t1" type="button">T1 Classic</button>
-            <button class="btn-dl-t btn-dl-2" id="btn-dl-t2" type="button">T2 Modern</button>
-            <button class="btn-dl-t btn-dl-3" id="btn-dl-t3" type="button">T3 Sidebar</button>
-            <button class="btn-dl-t btn-dl-4" id="btn-dl-t4" type="button">T4 ATS</button>
-          </div>
-        </div>
-
       </div>
 
     </main>
 
     <footer class="footer">
       <p>
-        Powered by <a href="https://groq.com" target="_blank" rel="noopener">Groq</a>
-        &amp; LaTeX —
-        Templates by
-        <a href="https://github.com/xprilion" target="_blank" rel="noopener">Anubhav Singh</a>
-        &amp; the open-source community
+        Powered by <a href="https://groq.com" target="_blank" rel="noopener">Groq</a> ·
+        Templates by Jitin Nair, Timmy Chan, FANGPath &amp; Anubhav Singh
       </p>
     </footer>
 
-  </div><!-- /.app -->
-
+  </div>
   <script src="app.js"></script>
 </body>
+
 </html>
