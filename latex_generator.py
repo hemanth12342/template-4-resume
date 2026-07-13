@@ -173,12 +173,10 @@ $|$
 %--- PROJECTS ---
 <% if d.projects %>
 \section{Projects}
-\begin{tabularx}{\linewidth}{@{}l r@{}}
 <% for project in d.projects %>
-\textbf{<<project.title>>} & \hfill \textit{<<project.technologies>>} \\[3.75pt]
-\multicolumn{2}{@{}X@{}}{<<project.description>>} \\[4pt]
+{\textbf{<<project.title>>} \hfill \textit{<<project.technologies>>}} \par\vspace{2pt}
+\noindent <<project.description>> \par\vspace{8pt}
 <% endfor %>
-\end{tabularx}
 <% endif %>
 
 %--- EDUCATION ---
