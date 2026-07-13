@@ -109,14 +109,14 @@ _TEMPLATE_1 = r"""
 
 %--- job listing environments ---
 \newenvironment{jobshort}[2]{%
-  \begin{tabularx}{\linewidth}{@{}l X r@{}}
-  \textbf{#1} & \hfill & #2 \\[3.75pt]
+  \begin{tabularx}{\linewidth}{@{}X r@{}}
+  \textbf{#1} & #2 \\[3.75pt]
   \end{tabularx}%
 }{}
 
 \newenvironment{joblong}[2]{%
-  \begin{tabularx}{\linewidth}{@{}l X r@{}}
-  \textbf{#1} & \hfill & #2 \\[3.75pt]
+  \begin{tabularx}{\linewidth}{@{}X r@{}}
+  \textbf{#1} & #2 \\[3.75pt]
   \end{tabularx}%
   \begin{minipage}[t]{\linewidth}
   \begin{itemize}[nosep,after=\strut,leftmargin=1em,itemsep=3pt,label=--]
