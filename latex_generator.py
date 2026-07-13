@@ -197,7 +197,21 @@ $|$
 \section{Skills}
 \begin{tabularx}{\linewidth}{@{}l X@{}}
 <% for skill in d.skills %>
-\textbf{<<skill.category>>} & \normalsize{<<skill.items>>}\\
+\textbf{<<skill.category>>} & \normalsize{<<skill.skill_list>>}\\
+<% endfor %>
+\end{tabularx}
+<% endif %>
+
+%--- CERTIFICATIONS ---
+<% if d.certifications %>
+\section{Certifications}
+\begin{tabularx}{\linewidth}{@{}l X r@{}}
+<% for cert in d.certifications %>
+<% if cert.url %>
+\href{<<cert.url>>}{\textbf{<<cert.name>>}} & <<cert.issuer>> & \textit{<<cert.date>>} \\
+<% else %>
+\textbf{<<cert.name>>} & <<cert.issuer>> & \textit{<<cert.date>>} \\
+<% endif %>
 <% endfor %>
 \end{tabularx}
 <% endif %>
@@ -272,7 +286,7 @@ _TEMPLATE_2 = r"""
 \section{Skills}
 \begin{tabularx}{\textwidth}{@{} L{3.4cm} X @{}}
 <% for skill in d.skills %>
-\textbf{<<skill.category>>} & <<skill.items>> \\[2pt]
+\textbf{<<skill.category>>} & <<skill.skill_list>> \\[2pt]
 <% endfor %>
 \end{tabularx}
 <% endif %>
@@ -323,6 +337,20 @@ _TEMPLATE_2 = r"""
 <% endfor %>
 <% for vol in d.volunteer %>
 \item \textbf{<<vol.role>>}, <<vol.organization>> \hfill \textit{<<vol.dates>>}
+<% endfor %>
+\end{itemize}
+<% endif %>
+
+%--- CERTIFICATIONS ---
+<% if d.certifications %>
+\section{Certifications}
+\begin{itemize}[leftmargin=1.5em, itemsep=-2pt, topsep=2pt]
+<% for cert in d.certifications %>
+<% if cert.url %>
+\item \textbf{\href{<<cert.url>>}{<<cert.name>>}}, <<cert.issuer>> \hfill \textit{<<cert.date>>}
+<% else %>
+\item \textbf{<<cert.name>>}, <<cert.issuer>> \hfill \textit{<<cert.date>>}
+<% endif %>
 <% endfor %>
 \end{itemize}
 <% endif %>
@@ -454,7 +482,7 @@ Relevant Coursework: <<edu.courses>>
 \begin{rSection}{Skills}
 \begin{tabular}{ @{} >{\bfseries}l @{\hspace{6ex}} l }
 <% for skill in d.skills %>
-<<skill.category>> & <<skill.items>> \\
+<<skill.category>> & <<skill.skill_list>> \\
 <% endfor %>
 \end{tabular}
 \end{rSection}
@@ -478,10 +506,11 @@ Relevant Coursework: <<edu.courses>>
 %--- PROJECTS ---
 <% if d.projects %>
 \begin{rSection}{Projects}
-\vspace{-1.25em}
+\begin{itemize}[leftmargin=1.5em, itemsep=-3pt, topsep=2pt]
 <% for project in d.projects %>
 \item \textbf{<<project.title>>.} {<<project.description>>. \textit{Tech: <<project.technologies>>}.}
 <% endfor %>
+\end{itemize}
 \end{rSection}
 <% endif %>
 
@@ -503,6 +532,21 @@ Relevant Coursework: <<edu.courses>>
 <% for vol in d.volunteer %>
 \item \textbf{<<vol.role>>}, <<vol.organization>>, <<vol.location>> \hfill \textit{<<vol.dates>>}\\
 <<vol.description>>
+<% endfor %>
+\end{itemize}
+\end{rSection}
+<% endif %>
+
+%--- CERTIFICATIONS ---
+<% if d.certifications %>
+\begin{rSection}{Certifications}
+\begin{itemize}[itemsep=-3pt, topsep=2pt]
+<% for cert in d.certifications %>
+<% if cert.url %>
+\item \textbf{\href{<<cert.url>>}{<<cert.name>>}}, <<cert.issuer>> \hfill \textit{<<cert.date>>}
+<% else %>
+\item \textbf{<<cert.name>>}, <<cert.issuer>> \hfill \textit{<<cert.date>>}
+<% endif %>
 <% endfor %>
 \end{itemize}
 \end{rSection}
@@ -610,7 +654,7 @@ _TEMPLATE_4 = r"""
 \section{Skills Summary}
 \resumeSubHeadingListStart
 <% for skill in d.skills %>
-\resumeSubItem{<<skill.category>>}{~~~~~~<<skill.items>>}
+\resumeSubItem{<<skill.category>>}{~~~~~~<<skill.skill_list>>}
 <% endfor %>
 \resumeSubHeadingListEnd
 <% endif %>
@@ -666,6 +710,21 @@ _TEMPLATE_4 = r"""
   \resumeSubHeadingListEnd
 <% endif %>
 
+<% if d.certifications %>
+\vspace{-5pt}
+\section{Certifications}
+\begin{description}[font=$\bullet$]
+<% for cert in d.certifications %>
+<% if cert.url %>
+\item {\textbf{\href{<<cert.url>>}{<<cert.name>>}}, <<cert.issuer>> \hfill \textit{<<cert.date>>}}
+<% else %>
+\item {\textbf{<<cert.name>>}, <<cert.issuer>> \hfill \textit{<<cert.date>>}}
+<% endif %>
+\vspace{-5pt}
+<% endfor %>
+\end{description}
+<% endif %>
+
 \end{document}
 """
 
@@ -681,6 +740,7 @@ def _normalize(data: dict) -> dict:
         "summary": "",
         "education": [], "skills": [], "experience": [],
         "projects": [], "awards": [], "volunteer": [],
+        "certifications": [],
     }
     for k, v in defaults.items():
         if k not in data or data[k] is None:
@@ -693,9 +753,21 @@ def _normalize(data: dict) -> dict:
     for exp in data.get("experience", []):
         exp.setdefault("bullets", [])
 
+    for skill in data.get("skills", []):
+        # Ensure skill_list key exists (handles legacy data that used "items")
+        if "skill_list" not in skill and "items" in skill:
+            skill["skill_list"] = skill.pop("items")
+        skill.setdefault("skill_list", "")
+
     for vol in data.get("volunteer", []):
         vol.setdefault("organization", vol.get("role", ""))
         vol.setdefault("description", "")
+
+    for cert in data.get("certifications", []):
+        cert.setdefault("name", "")
+        cert.setdefault("issuer", "")
+        cert.setdefault("date", "")
+        cert.setdefault("url", "")
 
     return data
 

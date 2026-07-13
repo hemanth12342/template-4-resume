@@ -95,10 +95,10 @@ _SCHEMA = """{
      "gpa": "8.5/10", "courses": "Data Structures, Algorithms"}
   ],
   "skills": [
-    {"category": "Languages",   "items": "Python, Java, JavaScript"},
-    {"category": "Frameworks",  "items": "FastAPI, React, TensorFlow"},
-    {"category": "Tools",       "items": "Git, Docker, AWS"},
-    {"category": "Soft Skills", "items": "Leadership, Communication"}
+    {"category": "Languages",   "skill_list": "Python, Java, JavaScript"},
+    {"category": "Frameworks",  "skill_list": "FastAPI, React, TensorFlow"},
+    {"category": "Tools",       "skill_list": "Git, Docker, AWS"},
+    {"category": "Soft Skills", "skill_list": "Leadership, Communication"}
   ],
   "experience": [
     {"role": "Software Engineer", "company": "Tech Corp", "location": "Remote",
@@ -113,6 +113,10 @@ _SCHEMA = """{
   "volunteer": [
     {"role": "Lead", "organization": "Community", "location": "City",
      "dates": "2022 - Present", "description": "What you contributed"}
+  ],
+  "certifications": [
+    {"name": "Certification Name", "issuer": "Issuing Body",
+     "date": "Month Year", "url": "https://verify.link"}
   ]
 }"""
 
