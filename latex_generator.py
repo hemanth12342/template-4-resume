@@ -600,10 +600,10 @@ _TEMPLATE_4 = r"""
 }
 \newcommand{\resumeSubheading}[4]{
   \vspace{-1pt}\item
-    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
-      \textbf{#1} & #2 \\
-      \textit{#3} & \textit{#4} \\
-    \end{tabular*}\vspace{-5pt}
+    \begin{minipage}[t]{0.97\textwidth}
+      \textbf{#1} \hfill #2 \\
+      \textit{#3} \hfill \textit{#4}
+    \end{minipage}\vspace{-5pt}
 }
 \newcommand{\resumeSubItem}[2]{\resumeItem{#1}{#2}\vspace{-3pt}}
 \renewcommand{\labelitemii}{$\circ$}
@@ -640,7 +640,7 @@ _TEMPLATE_4 = r"""
       {<<edu.degree>>}{<<edu.institution>>}
       {<<edu.field>><% if edu.gpa %>; GPA: <<edu.gpa>><% endif %>}{<<edu.dates>>}
 <% if edu.courses %>
-      {\scriptsize \textit{\footnotesize{\newline{}\textbf{Courses:} <<edu.courses>>}}}
+      \vspace{2pt}\par\noindent\small{\textit{\textbf{Courses:} <<edu.courses>>}}
 <% endif %>
 <% endfor %>
   \resumeSubHeadingListEnd
