@@ -5,7 +5,7 @@
  *   Local dev  → 'http://localhost:8000'
  *   Render     → 'https://your-app-name.onrender.com'
  */
-const API = 'https://resume-4-njn8.onrender.com';
+const API = 'https://template-4-resume.onrender.com';
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 
