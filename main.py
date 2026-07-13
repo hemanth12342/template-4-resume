@@ -33,7 +33,7 @@ app.add_middleware(
 )
 
 _client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-MODEL   = "llama-3.1-8b-instant"
+MODEL   = "llama-3.3-70b-versatile"
 MAX_FILE_BYTES = 10 * 1024 * 1024
 _pool = ThreadPoolExecutor(max_workers=4)
 
