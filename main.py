@@ -1,5 +1,7 @@
 """
-main.py — AI Resume Builder Backend (4-template version)
+main.py — AI Resume Builder Backend
+Changes from v2:
+  • certifications added to _SCHEMA, _parse_resume, _enhance, and _normalize
 """
 
 import asyncio
@@ -22,11 +24,11 @@ from latex_generator import generate_pdf
 
 load_dotenv()
 
-app = FastAPI(title="AI Resume Builder", version="2.0.0")
+app = FastAPI(title="AI Resume Builder", version="3.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # ← replace "*" with your Vercel URL in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -49,7 +51,7 @@ def _extract_text(file_bytes: bytes, filename: str) -> str:
         except Exception as exc:
             raise HTTPException(400, f"Could not read PDF: {exc}") from exc
         if not text:
-            raise HTTPException(400, "PDF has no extractable text (scanned image?). Use a text-based PDF or paste as TXT.")
+            raise HTTPException(400, "PDF has no extractable text. Use a text-based PDF or TXT file.")
         return text
     try:
         return file_bytes.decode("utf-8", errors="ignore").strip()
@@ -81,6 +83,11 @@ def _groq_call(prompt: str, temperature: float = 0.1, max_tokens: int = 4096) ->
     return ""
 
 
+# ── JSON Schema ───────────────────────────────────────────────────────────────
+# NOTE: "items" is the key name for skill values.
+# In Jinja2 templates we use skill['items'] (bracket notation) to avoid
+# Python's built-in dict.items() method shadowing the key.
+
 _SCHEMA = """{
   "name": "Full Name",
   "email": "user@example.com",
@@ -90,33 +97,56 @@ _SCHEMA = """{
   "linkedin": "https://linkedin.com/in/username",
   "summary": "",
   "education": [
-    {"degree": "Bachelor of Technology", "institution": "University Name",
-     "field": "Computer Science", "dates": "Aug 2020 - May 2024",
-     "gpa": "8.5/10", "courses": "Data Structures, Algorithms"}
+    {
+      "degree": "Bachelor of Technology",
+      "institution": "University Name",
+      "field": "Computer Science",
+      "dates": "Aug 2020 - May 2024",
+      "gpa": "8.5/10",
+      "courses": "Data Structures, Algorithms, Machine Learning"
+    }
   ],
   "skills": [
-    {"category": "Languages",   "skill_list": "Python, Java, JavaScript"},
-    {"category": "Frameworks",  "skill_list": "FastAPI, React, TensorFlow"},
-    {"category": "Tools",       "skill_list": "Git, Docker, AWS"},
-    {"category": "Soft Skills", "skill_list": "Leadership, Communication"}
+    { "category": "Languages",   "items": "Python, Java, JavaScript" },
+    { "category": "Frameworks",  "items": "FastAPI, React, TensorFlow" },
+    { "category": "Tools",       "items": "Git, Docker, AWS" },
+    { "category": "Soft Skills", "items": "Leadership, Communication" }
   ],
   "experience": [
-    {"role": "Software Engineer", "company": "Tech Corp", "location": "Remote",
-     "dates": "Jun 2023 - Present",
-     "bullets": ["Built X improving Y by Z%", "Led initiative saving N hours/week"]}
+    {
+      "role": "Software Engineer",
+      "company": "Tech Corp",
+      "location": "Remote",
+      "dates": "Jun 2023 - Present",
+      "bullets": [
+        "Built X feature improving Y by Z%",
+        "Led initiative saving N hours/week"
+      ]
+    }
   ],
   "projects": [
-    {"title": "Project Name", "technologies": "Python, React",
-     "description": "What it does and its impact"}
+    {
+      "title": "Project Name",
+      "technologies": "Python, React, PostgreSQL",
+      "description": "What it does and its measurable impact"
+    }
+  ],
+  "certifications": [
+    {
+      "name": "AWS Certified Solutions Architect",
+      "issuer": "Amazon Web Services",
+      "date": "2023"
+    }
   ],
   "awards": ["Award Name - Year"],
   "volunteer": [
-    {"role": "Lead", "organization": "Community", "location": "City",
-     "dates": "2022 - Present", "description": "What you contributed"}
-  ],
-  "certifications": [
-    {"name": "Certification Name", "issuer": "Issuing Body",
-     "date": "Month Year", "url": "https://verify.link"}
+    {
+      "role": "Community Lead",
+      "organization": "Tech Community",
+      "location": "City, Country",
+      "dates": "2022 - Present",
+      "description": "What you contributed and its impact"
+    }
   ]
 }"""
 
@@ -126,20 +156,23 @@ _SCHEMA = """{
 def _parse_resume(text: str) -> dict:
     prompt = f"""You are a precise resume parser.
 
-Extract ALL information from the resume below. Return ONLY a valid JSON object —
-no markdown fences, no preamble, no explanation.
+Extract ALL information from the resume below and return ONLY a valid JSON object.
+No markdown fences, no preamble, no explanation — just the JSON.
 
-RULES:
+EXTRACTION RULES:
 - Do NOT invent any information not in the text.
 - Use "" or [] for absent fields.
-- All string values must be plain text only — no LaTeX, no Markdown, no HTML.
+- All string values must be PLAIN TEXT ONLY — no LaTeX, no Markdown (*bold*), no HTML.
+- For skills, each object must have exactly two keys: "category" (string) and "items" (comma-separated string).
+- Extract certifications if mentioned (name, issuer, date).
+- Extract LinkedIn URL and GitHub username if present.
 
 RESUME:
 ---
 {text}
 ---
 
-Return JSON matching this schema:
+Return JSON matching this exact schema:
 {_SCHEMA}
 """
     raw = _groq_call(prompt, temperature=0.05)
@@ -152,8 +185,7 @@ Return JSON matching this schema:
 def _enhance(data: dict, jd: str) -> dict:
     prompt = f"""You are a world-class resume strategist and ATS expert.
 
-Transform the resume data below into a perfectly tailored, ATS-optimised resume
-for the target job description.
+Transform the resume data below into a perfectly tailored resume for the target job description.
 
 CURRENT RESUME DATA:
 ---
@@ -166,12 +198,14 @@ JOB DESCRIPTION:
 ---
 
 MANDATORY RULES:
-1. NEVER use "student", "fresher", "junior", or "trainee" — position as an experienced professional.
-2. Write a compelling 3-4 sentence Profile Summary mirroring JD keywords.
-3. Every experience must have 3-4 strong STAR-method bullet points with action verbs and metrics.
-4. Reorder skills to surface JD-relevant ones first.
+1. NEVER use "student", "fresher", "junior", or "trainee". Position as an experienced professional.
+2. Write a compelling 3-4 sentence Profile Summary that mirrors JD keywords and opens with the candidate's strongest value proposition.
+3. Every experience must have 3-4 STAR-method bullets with strong action verbs and quantified metrics.
+4. Reorder skills so JD-relevant ones appear first.
 5. Fix all grammar; past tense for past roles, present for current.
-6. All string values must be PLAIN TEXT ONLY — no LaTeX, no Markdown, no HTML.
+6. Keep certifications as-is (do not invent new ones).
+7. For the "skills" array, each object MUST have exactly these two keys: "category" (string) and "items" (comma-separated string of skills).
+8. All string values must be PLAIN TEXT ONLY — no LaTeX, no Markdown, no HTML.
 
 Return ONLY the enhanced JSON in the EXACT SAME SCHEMA. No markdown, no commentary.
 """
@@ -188,14 +222,12 @@ Return ONLY the enhanced JSON in the EXACT SAME SCHEMA. No markdown, no commenta
 async def generate_resume(
     resume_file:     UploadFile = File(...),
     job_description: str        = Form(...),
-    template_id:     int        = Form(default=4),   # ← 1, 2, 3, or 4
+    template_id:     int        = Form(default=4),
 ):
-    """Upload resume + JD + template choice → tailored PDF."""
-
     if not resume_file.filename:
         raise HTTPException(400, "No file provided.")
     if len(job_description.strip()) < 30:
-        raise HTTPException(400, "Job description too short.")
+        raise HTTPException(400, "Job description too short (min 30 characters).")
     if template_id not in (1, 2, 3, 4):
         raise HTTPException(400, "template_id must be 1, 2, 3, or 4.")
 

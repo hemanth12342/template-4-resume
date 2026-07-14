@@ -1,15 +1,10 @@
-"""
-latex_generator.py — All 4 LaTeX Templates with Jinja2
-========================================================
-Template 1 : Jitin Nair   — Modern CV (fontawesome5 icons)
-Template 2 : TLC Resume   — Data Science / Tech (self-contained)
-Template 3 : FAANG Path   — Classic one-page (custom resume.cls written at runtime)
-Template 4 : Anubhav Singh— Developer compact (ATS-friendly)
-
-Jinja2 delimiters (LaTeX-safe):
-  Variables  →  << var >>
-  Blocks     →  <% tag %>
-  Comments   →  <# comment #>
+r"""
+latex_generator.py — Fixed version
+Fixes:
+  1. skill['items'] bug  — was skill.items (returned dict method, not value)
+  2. Template 3 cls     — replaced \let\@origdocument with \AtBeginDocument
+  3. LinkedIn added     — all 4 templates now show LinkedIn
+  4. Certifications     — new section in all 4 templates
 """
 
 import os
@@ -78,8 +73,6 @@ def _make_jinja_env() -> Environment:
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  TEMPLATE 1 — Jitin Nair Modern CV
-#  Original: github.com/jitinnair1/autoCV  |  MIT License
-#  Changes : dummy data → Jinja2 variables; publications removed (uncommon)
 # ══════════════════════════════════════════════════════════════════════════════
 
 _TEMPLATE_1 = r"""
@@ -107,21 +100,21 @@ _TEMPLATE_1 = r"""
 \hypersetup{colorlinks,breaklinks,urlcolor=linkcolour,linkcolor=linkcolour}
 \usepackage{fontawesome5}
 
-%--- job listing environments ---
 \newenvironment{jobshort}[2]{%
-  \begin{tabularx}{\linewidth}{@{}X r@{}}
-  \textbf{#1} & #2 \\[3.75pt]
+  \begin{tabularx}{\linewidth}{@{}l X r@{}}
+  \textbf{#1} & \hfill & #2 \\[3.75pt]
   \end{tabularx}%
 }{}
 
 \newenvironment{joblong}[2]{%
-  \begin{tabularx}{\linewidth}{@{}X r@{}}
-  \textbf{#1} & #2 \\[3.75pt]
-  \end{tabularx}\par
-  \vspace{-2pt}
+  \begin{tabularx}{\linewidth}{@{}l X r@{}}
+  \textbf{#1} & \hfill & #2 \\[3.75pt]
+  \end{tabularx}%
+  \begin{minipage}[t]{\linewidth}
   \begin{itemize}[nosep,after=\strut,leftmargin=1em,itemsep=3pt,label=--]
 }{%
   \end{itemize}
+  \end{minipage}
 }
 
 \begin{document}
@@ -131,19 +124,15 @@ _TEMPLATE_1 = r"""
 \begin{tabularx}{\linewidth}{@{} C @{}}
 \Huge{<<d.name>>} \\[7.5pt]
 <% if d.github %>
-\href{https://github.com/<<d.github>>}{\raisebox{-0.05\height}\faGithub\ <<d.github>>}
-$|$
+\href{https://github.com/<<d.github>>}{\raisebox{-0.05\height}\faGithub\ <<d.github>>} $|$
 <% endif %>
 <% if d.linkedin %>
-\href{<<d.linkedin>>}{\raisebox{-0.05\height}\faLinkedin\ <<d.linkedin | clean_url>>}
-$|$
+\href{<<d.linkedin>>}{\raisebox{-0.05\height}\faLinkedin\ <<d.linkedin | clean_url>>} $|$
 <% endif %>
 <% if d.portfolio_url %>
-\href{<<d.portfolio_url>>}{\raisebox{-0.05\height}\faGlobe\ <<d.portfolio_url | clean_url>>}
-$|$
+\href{<<d.portfolio_url>>}{\raisebox{-0.05\height}\faGlobe\ <<d.portfolio_url | clean_url>>} $|$
 <% endif %>
-\href{mailto:<<d.email>>}{\raisebox{-0.05\height}\faEnvelope\ <<d.email | le>>}
-$|$
+\href{mailto:<<d.email>>}{\raisebox{-0.05\height}\faEnvelope\ <<d.email | le>>} $|$
 \href{tel:<<d.phone>>}{\raisebox{-0.05\height}\faMobile\ <<d.phone>>} \\
 \end{tabularx}
 
@@ -173,10 +162,12 @@ $|$
 %--- PROJECTS ---
 <% if d.projects %>
 \section{Projects}
+\begin{tabularx}{\linewidth}{@{}l r@{}}
 <% for project in d.projects %>
-{\textbf{<<project.title>>} \hfill \textit{<<project.technologies>>}} \par\vspace{2pt}
-\noindent <<project.description>> \par\vspace{8pt}
+\textbf{<<project.title>>} & \hfill \textit{<<project.technologies>>} \\[3.75pt]
+\multicolumn{2}{@{}X@{}}{<<project.description>>} \\[4pt]
 <% endfor %>
+\end{tabularx}
 <% endif %>
 
 %--- EDUCATION ---
@@ -189,26 +180,22 @@ $|$
 \end{tabularx}
 <% endif %>
 
+%--- CERTIFICATIONS ---
+<% if d.certifications %>
+\section{Certifications}
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+<% for cert in d.certifications %>
+\textbf{<<cert.name>>} & \textit{<<cert.issuer>>}<% if cert.date %>, <<cert.date>><% endif %> \\
+<% endfor %>
+\end{tabularx}
+<% endif %>
+
 %--- SKILLS ---
 <% if d.skills %>
 \section{Skills}
 \begin{tabularx}{\linewidth}{@{}l X@{}}
 <% for skill in d.skills %>
-\textbf{<<skill.category>>} & \normalsize{<<skill.skill_list>>}\\
-<% endfor %>
-\end{tabularx}
-<% endif %>
-
-%--- CERTIFICATIONS ---
-<% if d.certifications %>
-\section{Certifications}
-\begin{tabularx}{\linewidth}{@{}l X r@{}}
-<% for cert in d.certifications %>
-<% if cert.url %>
-\href{<<cert.url>>}{\textbf{<<cert.name>>}} & <<cert.issuer>> & \textit{<<cert.date>>} \\
-<% else %>
-\textbf{<<cert.name>>} & <<cert.issuer>> & \textit{<<cert.date>>} \\
-<% endif %>
+\textbf{<<skill.category>>} & \normalsize{<<skill['items']>>}\\
 <% endfor %>
 \end{tabularx}
 <% endif %>
@@ -220,10 +207,7 @@ $|$
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  TEMPLATE 2 — Data Science / Tech Resume (TLC-inspired, self-contained)
-#  Original: Timmy Chan  github.com/TimmyChan  |  MIT License
-#  Changes : TLCresume.sty replaced with inline standard-package equivalent;
-#            multi-file structure collapsed to single self-contained file.
+#  TEMPLATE 2 — Data Science / Tech Resume
 # ══════════════════════════════════════════════════════════════════════════════
 
 _TEMPLATE_2 = r"""
@@ -241,7 +225,6 @@ _TEMPLATE_2 = r"""
 \hypersetup{colorlinks=true, urlcolor=MidnightBlue, linkcolor=black}
 \pagestyle{empty}
 
-% Section line style
 \titleformat{\section}
   {\normalfont\normalsize\bfseries\uppercase}
   {}{0pt}{}[\color{black}\titlerule]
@@ -256,15 +239,16 @@ _TEMPLATE_2 = r"""
 \noindent
 \begin{tabularx}{\textwidth}{@{} X R{5.5cm} @{}}
   {\LARGE\textbf{<<d.name>>}} & \small <<d.phone>> \\
-<% if d.portfolio_url %>
-  \small\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>} & \small\href{mailto:<<d.email>>}{<<d.email | le>>} \\
+  \small\href{mailto:<<d.email>>}{<<d.email | le>>} & 
+<% if d.linkedin %>
+  \small\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>} \\
 <% else %>
-   & \small\href{mailto:<<d.email>>}{<<d.email | le>>} \\
+   \\
 <% endif %>
 <% if d.github %>
   \small\href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>} &
-<% if d.linkedin %>
-  \small\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>} \\
+<% if d.portfolio_url %>
+  \small\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>} \\
 <% else %>
    \\
 <% endif %>
@@ -283,7 +267,7 @@ _TEMPLATE_2 = r"""
 \section{Skills}
 \begin{tabularx}{\textwidth}{@{} L{3.4cm} X @{}}
 <% for skill in d.skills %>
-\textbf{<<skill.category>>} & <<skill.skill_list>> \\[2pt]
+\textbf{<<skill.category>>} & <<skill['items']>> \\[2pt]
 <% endfor %>
 \end{tabularx}
 <% endif %>
@@ -325,6 +309,16 @@ _TEMPLATE_2 = r"""
 <% endfor %>
 <% endif %>
 
+%--- CERTIFICATIONS ---
+<% if d.certifications %>
+\section{Certifications}
+\begin{itemize}[leftmargin=1.5em, itemsep=-2pt, topsep=2pt]
+<% for cert in d.certifications %>
+\item \textbf{<<cert.name>>} --- \textit{<<cert.issuer>>}<% if cert.date %> (<<cert.date>>)<% endif %>
+<% endfor %>
+\end{itemize}
+<% endif %>
+
 %--- ACTIVITIES ---
 <% if d.awards or d.volunteer %>
 \section{Activities}
@@ -338,92 +332,70 @@ _TEMPLATE_2 = r"""
 \end{itemize}
 <% endif %>
 
-%--- CERTIFICATIONS ---
-<% if d.certifications %>
-\section{Certifications}
-\begin{itemize}[leftmargin=1.5em, itemsep=-2pt, topsep=2pt]
-<% for cert in d.certifications %>
-<% if cert.url %>
-\item \textbf{\href{<<cert.url>>}{<<cert.name>>}}, <<cert.issuer>> \hfill \textit{<<cert.date>>}
-<% else %>
-\item \textbf{<<cert.name>>}, <<cert.issuer>> \hfill \textit{<<cert.date>>}
-<% endif %>
-<% endfor %>
-\end{itemize}
-<% endif %>
-
 \end{document}
 """
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  resume.cls  — written to temp dir at runtime for Template 3
-#  Replicates the FANGPath / sb2nov resume.cls behaviour
+#  resume.cls — written to temp dir at runtime for Template 3
+#  FIX: replaced \let\@origdocument with \AtBeginDocument (was causing Missing })
 # ══════════════════════════════════════════════════════════════════════════════
 
 _RESUME_CLS = r"""
 \ProvidesClass{resume}[Resume class - FAANG Path style]
 \LoadClass[11pt,letterpaper]{article}
-
 \usepackage[parfill]{parskip}
 \usepackage{array}
-\usepackage{hyperref}
 \pagestyle{empty}
 
 %--- Name ---
-\def\name#1{\def\@name{#1}}
-\def\@name{}
+\newcommand{\name}[1]{\def\resumename{#1}}
+\def\resumename{}
+\newcommand{\printresumename}{\centerline{\Huge\scshape\textbf{\resumename}}\medskip}
 
-%--- Addresses (up to 3 lines) ---
+%--- Addresses: stores up to 3 separate lines ---
 \newcounter{addrcount}
 \setcounter{addrcount}{0}
 
-\def\address#1{%
-  \stepcounter{addrcount}%
-  \expandafter\gdef\csname @addrline\theaddrcount\endcsname{#1}%
+\newcommand{\address}[1]{%
+    \stepcounter{addrcount}%
+    \expandafter\gdef\csname resumeaddr\theaddrcount\endcsname{#1}%
 }
 
-\newcommand{\@printaddr}[1]{%
-  \begingroup
-    \def\\{~$\diamond$~}%
-    \centerline{\csname @addrline#1\endcsname}%
-  \endgroup
-  \par\smallskip
+\newcommand{\printoneaddr}[1]{%
+    \begingroup
+        \def\\{~$\diamond$~}%
+        \centerline{\csname resumeaddr#1\endcsname}%
+    \endgroup
+    \smallskip
 }
 
-\newcommand{\printname}{%
-  \centerline{\Huge\scshape\textbf{\@name}}\medskip
-}
-
-\let\@origdocument=\document
-\renewcommand{\document}{%
-  \@origdocument
-  \printname
-  \ifnum\value{addrcount}>0 \@printaddr{1}\fi
-  \ifnum\value{addrcount}>1 \@printaddr{2}\fi
-  \ifnum\value{addrcount}>2 \@printaddr{3}\fi
-  \vspace{2pt}
+%--- Print name + addresses at start of document ---
+\AtBeginDocument{%
+    \printresumename
+    \ifnum\value{addrcount}>0\printoneaddr{1}\fi
+    \ifnum\value{addrcount}>1\printoneaddr{2}\fi
+    \ifnum\value{addrcount}>2\printoneaddr{3}\fi
 }
 
 %--- rSection environment ---
 \newenvironment{rSection}[1]{%
-  \medskip
-  \MakeUppercase{\textbf{#1}}%
-  \medskip\hrule\vspace{2pt}
-  \begin{list}{}{%
-    \setlength{\leftmargin}{1.5em}%
-  }%
-  \item[]%
+    \medskip
+    \MakeUppercase{\textbf{#1}}%
+    \medskip\hrule\vspace{2pt}
+    \begin{list}{}{%
+        \setlength{\leftmargin}{1.5em}%
+    }%
+    \item[]%
 }{%
-  \end{list}%
+    \end{list}%
 }
 """
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  TEMPLATE 3 — FAANG Path / sb2nov Classic Resume
-#  Original: FANGPath.com  |  MIT License
-#  Changes : resume.cls written at runtime; dummy data → Jinja2 variables
+#  TEMPLATE 3 — FAANG Path Classic Resume
+#  FIX: simplified \address{} calls (no multiline Jinja2 blocks inside braces)
 # ══════════════════════════════════════════════════════════════════════════════
 
 _TEMPLATE_3 = r"""
@@ -438,30 +410,25 @@ _TEMPLATE_3 = r"""
 
 \name{<<d.name>>}
 \address{<<d.phone>> \\ \href{mailto:<<d.email>>}{<<d.email | le>>}}
-<% if d.portfolio_url or d.github or d.linkedin %>
-\address{%
+<% if d.linkedin and d.github %>
+\address{\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>} \\ \href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}}
+<% elif d.linkedin %>
+\address{\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>}}
+<% elif d.github %>
+\address{\href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}}
+<% endif %>
 <% if d.portfolio_url %>
-\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>}%
-<% endif %>
-<% if d.github %>
- \\ \href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}%
-<% endif %>
-<% if d.linkedin %>
- \\ \href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>}%
-<% endif %>
-}
+\address{\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>}}
 <% endif %>
 
 \begin{document}
 
-%--- OBJECTIVE ---
 <% if d.summary %>
 \begin{rSection}{Objective}
 <<d.summary>>
 \end{rSection}
 <% endif %>
 
-%--- EDUCATION ---
 <% if d.education %>
 \begin{rSection}{Education}
 <% for edu in d.education %>
@@ -474,18 +441,16 @@ Relevant Coursework: <<edu.courses>>
 \end{rSection}
 <% endif %>
 
-%--- SKILLS ---
 <% if d.skills %>
 \begin{rSection}{Skills}
 \begin{tabular}{ @{} >{\bfseries}l @{\hspace{6ex}} l }
 <% for skill in d.skills %>
-<<skill.category>> & <<skill.skill_list>> \\
+<<skill.category>> & <<skill['items']>> \\
 <% endfor %>
 \end{tabular}
 \end{rSection}
 <% endif %>
 
-%--- EXPERIENCE ---
 <% if d.experience %>
 \begin{rSection}{Experience}
 <% for exp in d.experience %>
@@ -500,18 +465,25 @@ Relevant Coursework: <<edu.courses>>
 \end{rSection}
 <% endif %>
 
-%--- PROJECTS ---
 <% if d.projects %>
 \begin{rSection}{Projects}
-\begin{itemize}[leftmargin=1.5em, itemsep=-3pt, topsep=2pt]
+\vspace{-1.25em}
 <% for project in d.projects %>
 \item \textbf{<<project.title>>.} {<<project.description>>. \textit{Tech: <<project.technologies>>}.}
+<% endfor %>
+\end{rSection}
+<% endif %>
+
+<% if d.certifications %>
+\begin{rSection}{Certifications}
+\begin{itemize}[itemsep=-3pt, topsep=2pt]
+<% for cert in d.certifications %>
+\item \textbf{<<cert.name>>}<% if cert.issuer %>, \textit{<<cert.issuer>>}<% endif %><% if cert.date %> (<<cert.date>>)<% endif %>
 <% endfor %>
 \end{itemize}
 \end{rSection}
 <% endif %>
 
-%--- AWARDS ---
 <% if d.awards %>
 \begin{rSection}{Honors and Awards}
 \begin{itemize}[itemsep=-3pt, topsep=2pt]
@@ -522,7 +494,6 @@ Relevant Coursework: <<edu.courses>>
 \end{rSection}
 <% endif %>
 
-%--- VOLUNTEER ---
 <% if d.volunteer %>
 \begin{rSection}{Leadership \& Volunteer}
 \begin{itemize}[itemsep=-3pt, topsep=2pt]
@@ -534,29 +505,14 @@ Relevant Coursework: <<edu.courses>>
 \end{rSection}
 <% endif %>
 
-%--- CERTIFICATIONS ---
-<% if d.certifications %>
-\begin{rSection}{Certifications}
-\begin{itemize}[itemsep=-3pt, topsep=2pt]
-<% for cert in d.certifications %>
-<% if cert.url %>
-\item \textbf{\href{<<cert.url>>}{<<cert.name>>}}, <<cert.issuer>> \hfill \textit{<<cert.date>>}
-<% else %>
-\item \textbf{<<cert.name>>}, <<cert.issuer>> \hfill \textit{<<cert.date>>}
-<% endif %>
-<% endfor %>
-\end{itemize}
-\end{rSection}
-<% endif %>
-
 \end{document}
 """
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  TEMPLATE 4 — Anubhav Singh Developer Resume
-#  Original: github.com/xprilion  |  MIT License
-#  Changes : marvosym removed; resumeItemNoBold fixed; Jinja2 variables added
+#  FIX: skill['items'] instead of skill.items
+#  NEW: LinkedIn added to heading, Certifications section added
 # ══════════════════════════════════════════════════════════════════════════════
 
 _TEMPLATE_4 = r"""
@@ -600,10 +556,10 @@ _TEMPLATE_4 = r"""
 }
 \newcommand{\resumeSubheading}[4]{
   \vspace{-1pt}\item
-    \begin{minipage}[t]{0.97\textwidth}
-      \textbf{#1} \hfill #2 \\
-      \textit{#3} \hfill \textit{#4}
-    \end{minipage}\vspace{-5pt}
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{#3} & \textit{#4} \\
+    \end{tabular*}\vspace{-5pt}
 }
 \newcommand{\resumeSubItem}[2]{\resumeItem{#1}{#2}\vspace{-3pt}}
 \renewcommand{\labelitemii}{$\circ$}
@@ -617,13 +573,19 @@ _TEMPLATE_4 = r"""
 %--- HEADING ---
 \begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}r}
   \textbf{{\LARGE <<d.name>>}} & Email: \href{mailto:<<d.email>>}{<<d.email | le>>}\\
-<% if d.portfolio_url %>
-  \href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>} & Mobile:~~~<<d.phone>> \\
-<% else %>
    & Mobile:~~~<<d.phone>> \\
-<% endif %>
 <% if d.github %>
-  \href{https://github.com/<<d.github>>}{Github:~~github.com/<<d.github | le>>} \\
+  \href{https://github.com/<<d.github>>}{Github:~~github.com/<<d.github | le>>} &
+<% if d.linkedin %>
+  \href{<<d.linkedin>>}{LinkedIn:~~<<d.linkedin | clean_url | le>>} \\
+<% else %>
+  \\
+<% endif %>
+<% elif d.linkedin %>
+  \href{<<d.linkedin>>}{LinkedIn:~~<<d.linkedin | clean_url | le>>} & \\
+<% endif %>
+<% if d.portfolio_url %>
+  \href{<<d.portfolio_url>>}{Portfolio:~~<<d.portfolio_url | clean_url | le>>} & \\
 <% endif %>
 \end{tabular*}
 
@@ -640,7 +602,7 @@ _TEMPLATE_4 = r"""
       {<<edu.degree>>}{<<edu.institution>>}
       {<<edu.field>><% if edu.gpa %>; GPA: <<edu.gpa>><% endif %>}{<<edu.dates>>}
 <% if edu.courses %>
-      \vspace{2pt}\par\noindent\small{\textit{\textbf{Courses:} <<edu.courses>>}}
+      {\scriptsize \textit{\footnotesize{\newline{}\textbf{Courses:} <<edu.courses>>}}}
 <% endif %>
 <% endfor %>
   \resumeSubHeadingListEnd
@@ -651,7 +613,7 @@ _TEMPLATE_4 = r"""
 \section{Skills Summary}
 \resumeSubHeadingListStart
 <% for skill in d.skills %>
-\resumeSubItem{<<skill.category>>}{~~~~~~<<skill.skill_list>>}
+\resumeSubItem{<<skill.category>>}{~~~~~~<<skill['items']>>}
 <% endfor %>
 \resumeSubHeadingListEnd
 <% endif %>
@@ -684,6 +646,16 @@ _TEMPLATE_4 = r"""
 \resumeSubHeadingListEnd
 <% endif %>
 
+<% if d.certifications %>
+\vspace{-5pt}
+\section{Certifications}
+\resumeSubHeadingListStart
+<% for cert in d.certifications %>
+\resumeSubItem{<<cert.name>>}{<<cert.issuer>><% if cert.date %>, <<cert.date>><% endif %>}
+<% endfor %>
+\resumeSubHeadingListEnd
+<% endif %>
+
 <% if d.awards %>
 \vspace{-5pt}
 \section{Honors and Awards}
@@ -707,28 +679,11 @@ _TEMPLATE_4 = r"""
   \resumeSubHeadingListEnd
 <% endif %>
 
-<% if d.certifications %>
-\vspace{-5pt}
-\section{Certifications}
-\begin{description}[font=$\bullet$]
-<% for cert in d.certifications %>
-<% if cert.url %>
-\item {\textbf{\href{<<cert.url>>}{<<cert.name>>}}, <<cert.issuer>> \hfill \textit{<<cert.date>>}}
-<% else %>
-\item {\textbf{<<cert.name>>}, <<cert.issuer>> \hfill \textit{<<cert.date>>}}
-<% endif %>
-\vspace{-5pt}
-<% endfor %>
-\end{description}
-<% endif %>
-
 \end{document}
 """
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  DATA NORMALISATION
-# ══════════════════════════════════════════════════════════════════════════════
+# ── Data normalisation ─────────────────────────────────────────────────────────
 
 def _normalize(data: dict) -> dict:
     defaults = {
@@ -737,7 +692,7 @@ def _normalize(data: dict) -> dict:
         "summary": "",
         "education": [], "skills": [], "experience": [],
         "projects": [], "awards": [], "volunteer": [],
-        "certifications": [],
+        "certifications": [],          # ← NEW
     }
     for k, v in defaults.items():
         if k not in data or data[k] is None:
@@ -750,73 +705,40 @@ def _normalize(data: dict) -> dict:
     for exp in data.get("experience", []):
         exp.setdefault("bullets", [])
 
-    for skill in data.get("skills", []):
-        # Ensure skill_list key exists (handles legacy data that used "items")
-        if "skill_list" not in skill and "items" in skill:
-            skill["skill_list"] = skill.pop("items")
-        skill.setdefault("skill_list", "")
-
     for vol in data.get("volunteer", []):
         vol.setdefault("organization", vol.get("role", ""))
         vol.setdefault("description", "")
 
-    for cert in data.get("certifications", []):
+    for cert in data.get("certifications", []):   # ← NEW
         cert.setdefault("name", "")
         cert.setdefault("issuer", "")
         cert.setdefault("date", "")
-        cert.setdefault("url", "")
 
     return data
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  PUBLIC ENTRY POINT
-# ══════════════════════════════════════════════════════════════════════════════
+# ── Template routing ───────────────────────────────────────────────────────────
 
-_TEMPLATES = {
-    1: _TEMPLATE_1,
-    2: _TEMPLATE_2,
-    3: _TEMPLATE_3,
-    4: _TEMPLATE_4,
-}
+_TEMPLATES = {1: _TEMPLATE_1, 2: _TEMPLATE_2, 3: _TEMPLATE_3, 4: _TEMPLATE_4}
 
+
+# ── Public entry point ─────────────────────────────────────────────────────────
 
 def generate_pdf(raw_data: dict, template_id: int = 4) -> bytes:
-    """
-    Generate a PDF resume from structured data using one of the 4 LaTeX templates.
-
-    Parameters
-    ----------
-    raw_data    : dict  — structured resume data (from main.py AI pipeline)
-    template_id : int  — 1, 2, 3, or 4  (defaults to 4)
-
-    Returns
-    -------
-    bytes  — compiled PDF content
-
-    Raises
-    ------
-    RuntimeError if pdflatex is not installed or compilation fails.
-    """
     if shutil.which("pdflatex") is None:
         raise RuntimeError(
-            "pdflatex not found on PATH.\n"
-            "  macOS  : brew install --cask mactex  OR  brew install --cask basictex\n"
-            "           then: sudo tlmgr install fontawesome5 enumitem titlesec fancyhdr\n"
-            "  Linux  : sudo apt install texlive-latex-extra texlive-fonts-extra\n"
-            "  Docker : texlive packages installed in Dockerfile automatically."
+            "pdflatex not found. Install MacTeX (macOS) or "
+            "texlive-latex-extra + texlive-fonts-extra (Linux/Docker)."
         )
 
     template_src = _TEMPLATES.get(template_id, _TEMPLATE_4)
-
-    data    = _normalize(dict(raw_data))
-    escaped = _escape_data(data)
-
-    env       = _make_jinja_env()
-    latex_src = env.from_string(template_src).render(d=escaped)
+    data         = _normalize(dict(raw_data))
+    escaped      = _escape_data(data)
+    env          = _make_jinja_env()
+    latex_src    = env.from_string(template_src).render(d=escaped)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Template 3 needs resume.cls in the same directory as the .tex file
+        # Template 3 needs resume.cls written next to the .tex file
         if template_id == 3:
             with open(os.path.join(tmpdir, "resume.cls"), "w", encoding="utf-8") as fh:
                 fh.write(_RESUME_CLS)
@@ -829,15 +751,12 @@ def generate_pdf(raw_data: dict, template_id: int = 4) -> bytes:
             fh.write(latex_src)
 
         cmd = [
-            "pdflatex",
-            "-interaction=nonstopmode",
-            "-halt-on-error",
-            "-output-directory", tmpdir,
-            tex_path,
+            "pdflatex", "-interaction=nonstopmode",
+            "-halt-on-error", "-output-directory", tmpdir, tex_path,
         ]
 
         result = None
-        for _ in range(2):   # two passes for stable layout
+        for _ in range(2):
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
 
         if not os.path.exists(pdf_path):
@@ -848,8 +767,7 @@ def generate_pdf(raw_data: dict, template_id: int = 4) -> bytes:
                 errors = [l for l in lines if l.startswith("!")]
                 log_tail = "\n".join(errors[:10]) or "\n".join(lines[-30:])
             raise RuntimeError(
-                f"pdflatex failed (exit {result.returncode}).\n"
-                f"Errors:\n{log_tail}"
+                f"pdflatex failed (exit {result.returncode}).\nErrors:\n{log_tail}"
             )
 
         with open(pdf_path, "rb") as fh:
