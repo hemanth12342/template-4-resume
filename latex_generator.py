@@ -107,14 +107,13 @@ _TEMPLATE_1 = r"""
 }{}
 
 \newenvironment{joblong}[2]{%
+  \noindent
   \begin{tabularx}{\linewidth}{@{}l X r@{}}
   \textbf{#1} & \hfill & #2 \\[3.75pt]
-  \end{tabularx}%
-  \begin{minipage}[t]{\linewidth}
+  \end{tabularx}\par\vspace{-1.5ex}
   \begin{itemize}[nosep,after=\strut,leftmargin=1em,itemsep=3pt,label=--]
 }{%
   \end{itemize}
-  \end{minipage}
 }
 
 \begin{document}
