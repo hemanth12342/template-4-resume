@@ -123,10 +123,10 @@ _TEMPLATE_1 = r"""
 \begin{tabularx}{\linewidth}{@{} C @{}}
 \Huge{<<d.name>>} \\[7.5pt]
 <% if d.github %>
-\href{https://github.com/<<d.github>>}{\raisebox{-0.05\height}\faGithub\ <<d.github>>} $|$
+\href{https://github.com/<<d.github>>}{\raisebox{-0.05\height}\faGithub\ GitHub} $|$
 <% endif %>
 <% if d.linkedin %>
-\href{<<d.linkedin>>}{\raisebox{-0.05\height}\faLinkedin\ <<d.linkedin | clean_url>>} $|$
+\href{<<d.linkedin>>}{\raisebox{-0.05\height}\faLinkedin\ LinkedIn} $|$
 <% endif %>
 <% if d.portfolio_url %>
 \href{<<d.portfolio_url>>}{\raisebox{-0.05\height}\faGlobe\ <<d.portfolio_url | clean_url>>} $|$
@@ -241,12 +241,12 @@ _TEMPLATE_2 = r"""
   {\LARGE\textbf{<<d.name>>}} & \small <<d.phone>> \\
   \small\href{mailto:<<d.email>>}{<<d.email | le>>} & 
 <% if d.linkedin %>
-  \small\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>} \\
+  \small\href{<<d.linkedin>>}{LinkedIn} \\
 <% else %>
    \\
 <% endif %>
 <% if d.github %>
-  \small\href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>} &
+  \small\href{https://github.com/<<d.github>>}{GitHub} &
 <% if d.portfolio_url %>
   \small\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>} \\
 <% else %>
@@ -414,11 +414,11 @@ _TEMPLATE_3 = r"""
 \name{<<d.name>>}
 \address{<<d.phone>> \\ \href{mailto:<<d.email>>}{<<d.email | le>>}}
 <% if d.linkedin and d.github %>
-\address{\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>} \\ \href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}}
+\address{\href{<<d.linkedin>>}{LinkedIn} \\ \href{https://github.com/<<d.github>>}{GitHub}}
 <% elif d.linkedin %>
-\address{\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>}}
+\address{\href{<<d.linkedin>>}{LinkedIn}}
 <% elif d.github %>
-\address{\href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}}
+\address{\href{https://github.com/<<d.github>>}{GitHub}}
 <% endif %>
 <% if d.portfolio_url %>
 \address{\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>}}
@@ -588,14 +588,14 @@ _TEMPLATE_4 = r"""
   \textbf{{\LARGE <<d.name>>}} & Email: \href{mailto:<<d.email>>}{<<d.email | le>>}\\
    & Mobile:~~~<<d.phone>> \\
 <% if d.github %>
-  \href{https://github.com/<<d.github>>}{Github:~~github.com/<<d.github | le>>} &
+  \href{https://github.com/<<d.github>>}{GitHub} &
 <% if d.linkedin %>
-  \href{<<d.linkedin>>}{LinkedIn:~~<<d.linkedin | clean_url | le>>} \\
+  \href{<<d.linkedin>>}{LinkedIn} \\
 <% else %>
   \\
 <% endif %>
 <% elif d.linkedin %>
-  \href{<<d.linkedin>>}{LinkedIn:~~<<d.linkedin | clean_url | le>>} & \\
+  \href{<<d.linkedin>>}{LinkedIn} & \\
 <% endif %>
 <% if d.portfolio_url %>
   \href{<<d.portfolio_url>>}{Portfolio:~~<<d.portfolio_url | clean_url | le>>} & \\
