@@ -218,7 +218,7 @@ _TEMPLATE_2 = r"""
 \usepackage{tabularx}
 \usepackage{array}
 \usepackage{titlesec}
-\usepackage[usenames,dvipsnames]{color}
+\usepackage{xcolor}
 \usepackage[pdftex]{hyperref}
 \usepackage{parskip}
 
@@ -226,8 +226,8 @@ _TEMPLATE_2 = r"""
 \pagestyle{empty}
 
 \titleformat{\section}
-  {\normalfont\normalsize\bfseries\uppercase}
-  {}{0pt}{}[\titlerule]
+  {\normalfont\normalsize\bfseries}
+  {}{0pt}{\MakeUppercase}[\titlerule]
 \titlespacing*{\section}{0pt}{8pt}{4pt}
 
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
