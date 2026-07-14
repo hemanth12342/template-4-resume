@@ -211,7 +211,7 @@ _TEMPLATE_1 = r"""
 # ══════════════════════════════════════════════════════════════════════════════
 
 _TEMPLATE_2 = r"""
-\documentclass[12pt,a4paper]{article}
+\documentclass[11pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[margin=0.65in, top=0.55in, bottom=0.55in]{geometry}
 \usepackage{enumitem}
@@ -237,7 +237,7 @@ _TEMPLATE_2 = r"""
 
 %--- HEADER ---
 \noindent
-\begin{tabularx}{\textwidth}{@{} X R{5.5cm} @{}}
+\begin{tabularx}{\textwidth}{@{} >{\raggedright\arraybackslash}X >{\raggedleft\arraybackslash}X @{}}
   {\LARGE\textbf{<<d.name>>}} & \small <<d.phone>> \\
   \small\href{mailto:<<d.email>>}{<<d.email | le>>} & 
 <% if d.linkedin %>
