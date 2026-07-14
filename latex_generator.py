@@ -309,9 +309,7 @@ _TEMPLATE_2 = r"""
 <% for edu in d.education %>
 \noindent
 \textbf{<<edu.degree>>} in <<edu.field>> \hfill \textit{<<edu.dates>>} \\
-<<edu.institution>><% if edu.gpa %>, GPA: <<edu.gpa>><% endif %>
-
-\vspace{3pt}
+<<edu.institution>><% if edu.gpa %>, GPA: <<edu.gpa>><% endif %> \\[3pt]
 <% endfor %>
 <% endif %>
 
