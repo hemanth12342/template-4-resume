@@ -101,15 +101,15 @@ _TEMPLATE_1 = r"""
 \usepackage{fontawesome5}
 
 \newenvironment{jobshort}[2]{%
-  \begin{tabularx}{\linewidth}{@{}l X r@{}}
-  \textbf{#1} & \hfill & #2 \\[3.75pt]
+  \begin{tabularx}{\linewidth}{@{}X r@{}}
+  \textbf{#1} & #2 \\[3.75pt]
   \end{tabularx}%
 }{}
 
 \newenvironment{joblong}[2]{%
   \noindent
-  \begin{tabularx}{\linewidth}{@{}l X r@{}}
-  \textbf{#1} & \hfill & #2 \\[3.75pt]
+  \begin{tabularx}{\linewidth}{@{}X r@{}}
+  \textbf{#1} & #2 \\[3.75pt]
   \end{tabularx}\par\vspace{-1.5ex}
   \begin{itemize}[nosep,after=\strut,leftmargin=1em,itemsep=3pt,label=--]
 }{%
