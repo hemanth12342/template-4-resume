@@ -227,7 +227,7 @@ _TEMPLATE_2 = r"""
 
 \titleformat{\section}
   {\normalfont\normalsize\bfseries\uppercase}
-  {}{0pt}{}[\color{black}\titlerule]
+  {}{0pt}{}[\titlerule]
 \titlespacing*{\section}{0pt}{8pt}{4pt}
 
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
