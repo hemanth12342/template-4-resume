@@ -238,17 +238,17 @@ _TEMPLATE_2 = r"""
 %--- HEADER ---
 \noindent
 \begin{tabularx}{\textwidth}{@{} >{\raggedright\arraybackslash}X >{\raggedleft\arraybackslash}X @{}}
-  {\LARGE\textbf{<<d.name>>}} & \small <<d.phone>> \\
-  \small\href{mailto:<<d.email>>}{<<d.email | le>>} & 
+  {\LARGE\textbf{<<d.name>>}} & <<d.phone>> \\
+  \href{mailto:<<d.email>>}{<<d.email | le>>} & 
 <% if d.linkedin %>
-  \small\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>} \\
+  \href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>} \\
 <% else %>
    \\
 <% endif %>
 <% if d.github %>
-  \small\href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>} &
+  \href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>} &
 <% if d.portfolio_url %>
-  \small\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>} \\
+  \href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>} \\
 <% else %>
    \\
 <% endif %>
