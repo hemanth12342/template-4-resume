@@ -211,7 +211,7 @@ _TEMPLATE_1 = r"""
 # ══════════════════════════════════════════════════════════════════════════════
 
 _TEMPLATE_2 = r"""
-\documentclass[10pt,a4paper]{article}
+\documentclass[11pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[margin=0.65in, top=0.55in, bottom=0.55in]{geometry}
 \usepackage{enumitem}
