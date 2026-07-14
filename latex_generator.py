@@ -294,6 +294,7 @@ _TEMPLATE_2 = r"""
 <% for project in d.projects %>
 \noindent\textbf{<<project.title>>} \hfill \textit{<<project.technologies>>} \\
 <<project.description>>
+
 \vspace{5pt}
 <% endfor %>
 <% endif %>
@@ -305,6 +306,7 @@ _TEMPLATE_2 = r"""
 \noindent
 \textbf{<<edu.degree>>} in <<edu.field>> \hfill \textit{<<edu.dates>>} \\
 <<edu.institution>><% if edu.gpa %>, GPA: <<edu.gpa>><% endif %>
+
 \vspace{3pt}
 <% endfor %>
 <% endif %>
