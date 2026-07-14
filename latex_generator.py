@@ -211,7 +211,7 @@ _TEMPLATE_1 = r"""
 # ══════════════════════════════════════════════════════════════════════════════
 
 _TEMPLATE_2 = r"""
-\documentclass[11pt,a4paper]{article}
+\documentclass[12pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[margin=0.65in, top=0.55in, bottom=0.55in]{geometry}
 \usepackage{enumitem}
@@ -237,18 +237,18 @@ _TEMPLATE_2 = r"""
 
 %--- HEADER ---
 \noindent
-\begin{tabularx}{\textwidth}{@{} >{\raggedright\arraybackslash}X >{\raggedleft\arraybackslash}X @{}}
-  {\LARGE\textbf{<<d.name>>}} & <<d.phone>> \\
-  \href{mailto:<<d.email>>}{<<d.email | le>>} & 
+\begin{tabularx}{\textwidth}{@{} l >{\raggedleft\arraybackslash}X @{}}
+  {\LARGE\textbf{<<d.name>>}} & \small <<d.phone>> \\
+  \small\href{mailto:<<d.email>>}{<<d.email | le>>} & 
 <% if d.linkedin %>
-  \href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>} \\
+  \small\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>} \\
 <% else %>
    \\
 <% endif %>
 <% if d.github %>
-  \href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>} &
+  \small\href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>} &
 <% if d.portfolio_url %>
-  \href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>} \\
+  \small\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>} \\
 <% else %>
    \\
 <% endif %>
