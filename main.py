@@ -128,7 +128,11 @@ _SCHEMA = """{
     {
       "title": "Project Name",
       "technologies": "Python, React, PostgreSQL",
-      "description": "What it does and its measurable impact"
+      "bullets": [
+        "What it does and its measurable impact",
+        "Another key metric or achievement",
+        "Third important point"
+      ]
     }
   ],
   "certifications": [
@@ -200,7 +204,7 @@ JOB DESCRIPTION:
 MANDATORY RULES:
 1. NEVER use "student", "fresher", "junior", or "trainee". Position as an experienced professional.
 2. Write a compelling 3-4 sentence Profile Summary that mirrors JD keywords and opens with the candidate's strongest value proposition.
-3. Every experience must have 3-4 STAR-method bullets with strong action verbs and quantified metrics.
+3. Every experience and project must have at least 3 STAR-method bullets with strong action verbs and quantified metrics.
 4. Reorder skills so JD-relevant ones appear first.
 5. Fix all grammar; past tense for past roles, present for current.
 6. Keep certifications as-is (do not invent new ones).

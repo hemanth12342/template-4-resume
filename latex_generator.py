@@ -162,12 +162,13 @@ _TEMPLATE_1 = r"""
 %--- PROJECTS ---
 <% if d.projects %>
 \section{Projects}
-\begin{tabularx}{\linewidth}{@{}l r@{}}
 <% for project in d.projects %>
-\textbf{<<project.title>>} & \hfill \textit{<<project.technologies>>} \\[3.75pt]
-\multicolumn{2}{@{}X@{}}{<<project.description>>} \\[4pt]
+\begin{joblong}{<<project.title>>}{<<project.technologies>>}
+<% for bullet in project.bullets %>
+\item <<bullet>>
 <% endfor %>
-\end{tabularx}
+\end{joblong}
+<% endfor %>
 <% endif %>
 
 %--- EDUCATION ---
@@ -292,10 +293,13 @@ _TEMPLATE_2 = r"""
 <% if d.projects %>
 \section{Projects}
 <% for project in d.projects %>
-\noindent\textbf{<<project.title>>} \hfill \textit{<<project.technologies>>} \\
-<<project.description>>
-
-\vspace{5pt}
+\noindent\textbf{<<project.title>>} \hfill \textit{<<project.technologies>>}
+\begin{itemize}[leftmargin=1.5em, itemsep=-2pt, topsep=2pt, parsep=0pt]
+<% for bullet in project.bullets %>
+\item <<bullet>>
+<% endfor %>
+\end{itemize}
+\vspace{3pt}
 <% endfor %>
 <% endif %>
 
@@ -469,9 +473,13 @@ Relevant Coursework: <<edu.courses>>
 
 <% if d.projects %>
 \begin{rSection}{Projects}
-\vspace{-1.25em}
 <% for project in d.projects %>
-\item \textbf{<<project.title>>.} {<<project.description>>. \textit{Tech: <<project.technologies>>}.}
+\textbf{<<project.title>>} \hfill \textit{<<project.technologies>>}
+\begin{itemize}[itemsep=-3pt, topsep=2pt]
+<% for bullet in project.bullets %>
+\item <<bullet>>
+<% endfor %>
+\end{itemize}
 <% endfor %>
 \end{rSection}
 <% endif %>
@@ -642,8 +650,14 @@ _TEMPLATE_4 = r"""
 \section{Projects}
 \resumeSubHeadingListStart
 <% for project in d.projects %>
-\resumeSubItem{<<project.title>> (<<project.technologies>>)}{<<project.description>>}
-\vspace{2pt}
+    \resumeSubheading{<<project.title>>}{}{<<project.technologies>>}{}
+    \vspace{-5pt}
+    \resumeItemListStart
+<% for bullet in project.bullets %>
+        \resumeItemNoBold{<<bullet>>}
+<% endfor %>
+    \resumeItemListEnd
+    \vspace{-5pt}
 <% endfor %>
 \resumeSubHeadingListEnd
 <% endif %>
@@ -692,8 +706,8 @@ def _normalize(data: dict) -> dict:
         "name": "", "email": "", "phone": "",
         "portfolio_url": "", "github": "", "linkedin": "",
         "summary": "",
-        "education": [], "skills": [], "experience": [],
-        "projects": [], "awards": [], "volunteer": [],
+        "education": [], "skills": [], "experience": [], "projects": [],
+        "awards": [], "volunteer": [],
         "certifications": [],          # ← NEW
     }
     for k, v in defaults.items():
@@ -710,6 +724,9 @@ def _normalize(data: dict) -> dict:
     for vol in data.get("volunteer", []):
         vol.setdefault("organization", vol.get("role", ""))
         vol.setdefault("description", "")
+
+    for proj in data.get("projects", []):         # ← NEW
+        proj.setdefault("bullets", [])            # ← NEW
 
     for cert in data.get("certifications", []):   # ← NEW
         cert.setdefault("name", "")
