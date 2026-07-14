@@ -523,7 +523,7 @@ Relevant Coursework: <<edu.courses>>
 # ══════════════════════════════════════════════════════════════════════════════
 
 _TEMPLATE_4 = r"""
-\documentclass[a4paper,11pt]{article}
+\documentclass[a4paper,12pt]{article}
 
 \usepackage{latexsym}
 \usepackage[empty]{fullpage}
@@ -568,9 +568,15 @@ _TEMPLATE_4 = r"""
       \textit{#3} & \textit{#4} \\
     \end{tabular*}\vspace{-5pt}
 }
+\newcommand{\resumeProjectHeading}[2]{
+  \vspace{-1pt}\item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & \textit{#2} \\
+    \end{tabular*}\vspace{-5pt}
+}
 \newcommand{\resumeSubItem}[2]{\resumeItem{#1}{#2}\vspace{-3pt}}
 \renewcommand{\labelitemii}{$\circ$}
-\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=*]}
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
 \newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
 \newcommand{\resumeItemListStart}{\begin{itemize}}
 \newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
@@ -647,7 +653,7 @@ _TEMPLATE_4 = r"""
 \section{Projects}
 \resumeSubHeadingListStart
 <% for project in d.projects %>
-    \resumeSubheading{<<project.title>>}{}{<<project.technologies>>}{}
+    \resumeProjectHeading{<<project.title>>}{<<project.technologies>>}
     \vspace{-5pt}
     \resumeItemListStart
 <% for bullet in project.bullets %>
