@@ -218,7 +218,7 @@ _TEMPLATE_2 = r"""
 \usepackage{tabularx}
 \usepackage{array}
 \usepackage{titlesec}
-\usepackage{xcolor}
+\usepackage[usenames,dvipsnames]{xcolor}
 \usepackage[pdftex]{hyperref}
 \usepackage{parskip}
 
