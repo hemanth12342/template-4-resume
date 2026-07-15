@@ -565,7 +565,7 @@ _TEMPLATE_4 = r"""
 }
 \newcommand{\resumeSubheading}[4]{
   \vspace{-1pt}\item
-    \begin{tabularx}{\textwidth}{@{} >{\raggedright\arraybackslash}X r @{}}
+    \begin{tabularx}{\textwidth}{@{} >{\hsize=1.15\hsize\raggedright\arraybackslash}X >{\hsize=0.85\hsize\raggedleft\arraybackslash}X @{}}
       \textbf{#1} & #2 \\
       \textit{#3} & \textit{#4} \\
     \end{tabularx}\vspace{-5pt}
