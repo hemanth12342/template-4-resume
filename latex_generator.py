@@ -530,6 +530,7 @@ _TEMPLATE_4 = r"""
 \usepackage[empty]{fullpage}
 \usepackage{titlesec}
 \usepackage[usenames,dvipsnames]{color}
+\usepackage{tabularx}
 \usepackage{verbatim}
 \usepackage{enumitem}
 \usepackage[pdftex]{hyperref}
@@ -564,16 +565,16 @@ _TEMPLATE_4 = r"""
 }
 \newcommand{\resumeSubheading}[4]{
   \vspace{-1pt}\item
-    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+    \begin{tabularx}{\textwidth}{@{}X r@{}}
       \textbf{#1} & #2 \\
       \textit{#3} & \textit{#4} \\
-    \end{tabular*}\vspace{-5pt}
+    \end{tabularx}\vspace{-5pt}
 }
 \newcommand{\resumeProjectHeading}[2]{
   \vspace{-1pt}\item
-    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+    \begin{tabularx}{\textwidth}{@{}X r@{}}
       \textbf{#1} & \textit{#2} \\
-    \end{tabular*}\vspace{-5pt}
+    \end{tabularx}\vspace{-5pt}
 }
 \newcommand{\resumeSubItem}[2]{\resumeItem{#1}{#2}\vspace{-3pt}}
 \renewcommand{\labelitemii}{$\circ$}
@@ -585,23 +586,19 @@ _TEMPLATE_4 = r"""
 \begin{document}
 
 %--- HEADING ---
-\begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}r}
-  \textbf{{\LARGE <<d.name>>}} & Email: \href{mailto:<<d.email>>}{<<d.email | le>>}\\
-   & Mobile:~~~<<d.phone>> \\
-<% if d.github %>
-  \href{https://github.com/<<d.github>>}{<<d.github | le>>} &
+\begin{center}
+    \textbf{\Huge \scshape <<d.name>>} \\ \vspace{4pt}
+    \small <<d.phone>> $|$ \href{mailto:<<d.email>>}{\underline{<<d.email | le>>}}
 <% if d.linkedin %>
-  \href{<<d.linkedin>>}{<<d.linkedin | handle | le>>} \\
-<% else %>
-  \\
+    $|$ \href{<<d.linkedin>>}{\underline{<<d.linkedin | handle | le>>}}
 <% endif %>
-<% elif d.linkedin %>
-  \href{<<d.linkedin>>}{<<d.linkedin | handle | le>>} & \\
+<% if d.github %>
+    $|$ \href{https://github.com/<<d.github>>}{\underline{<<d.github | le>>}}
 <% endif %>
 <% if d.portfolio_url %>
-  \href{<<d.portfolio_url>>}{Portfolio:~~<<d.portfolio_url | clean_url | le>>} & \\
+    $|$ \href{<<d.portfolio_url>>}{\underline{<<d.portfolio_url | clean_url | le>>}}
 <% endif %>
-\end{tabular*}
+\end{center}
 
 <% if d.summary %>
 \section{Profile Summary}
