@@ -565,14 +565,14 @@ _TEMPLATE_4 = r"""
 }
 \newcommand{\resumeSubheading}[4]{
   \vspace{-1pt}\item
-    \begin{tabularx}{\textwidth}{@{}X r@{}}
+    \begin{tabularx}{\textwidth}{@{} >{\raggedright\arraybackslash}X r @{}}
       \textbf{#1} & #2 \\
       \textit{#3} & \textit{#4} \\
     \end{tabularx}\vspace{-5pt}
 }
 \newcommand{\resumeProjectHeading}[2]{
   \vspace{-1pt}\item
-    \begin{tabularx}{\textwidth}{@{}X r@{}}
+    \begin{tabularx}{\textwidth}{@{} >{\raggedright\arraybackslash}X r @{}}
       \textbf{#1} & \textit{#2} \\
     \end{tabularx}\vspace{-5pt}
 }
@@ -611,7 +611,7 @@ _TEMPLATE_4 = r"""
 <% for edu in d.education %>
     \resumeSubheading
       {<<edu.degree>>}{<<edu.institution>>}
-      {<<edu.field>><% if edu.gpa %>; GPA: <<edu.gpa>><% endif %>}{<<edu.dates>>}
+      {<<edu.field>><% if edu.gpa %> \newline GPA: <<edu.gpa>><% endif %>}{<<edu.dates>>}
 <% if edu.courses %>
       {\scriptsize \textit{\footnotesize{\newline{}\textbf{Courses:} <<edu.courses>>}}}
 <% endif %>
