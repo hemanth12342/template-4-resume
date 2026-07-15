@@ -565,7 +565,7 @@ _TEMPLATE_4 = r"""
 }
 \newcommand{\resumeSubheading}[4]{
   \vspace{-1pt}\item
-    \begin{tabularx}{\textwidth}{@{} >{\hsize=1.15\hsize\raggedright\arraybackslash}X >{\hsize=0.85\hsize\raggedleft\arraybackslash}X @{}}
+    \begin{tabularx}{\textwidth}{@{} >{\raggedright\arraybackslash}X >{\raggedleft\arraybackslash}X @{}}
       \textbf{#1} & #2 \\
       \textit{#3} & \textit{#4} \\
     \end{tabularx}\vspace{-5pt}
@@ -609,11 +609,16 @@ _TEMPLATE_4 = r"""
 \section{Education}
   \resumeSubHeadingListStart
 <% for edu in d.education %>
-    \resumeSubheading
-      {<<edu.degree>>}{<<edu.institution>>}
-      {<<edu.field>><% if edu.gpa %> \newline GPA: <<edu.gpa>><% endif %>}{<<edu.dates>>}
+  \vspace{-1pt}\item
+    \begin{tabularx}{\textwidth}{@{} l >{\raggedleft\arraybackslash}X @{}}
+      \textbf{<<edu.degree>>} & <<edu.institution>> \\
+      \textit{<<edu.field>>} & \textit{<<edu.dates>>} \\
+<% if edu.gpa %>
+      \textit{GPA: <<edu.gpa>>} & \\
+<% endif %>
+    \end{tabularx}\vspace{-5pt}
 <% if edu.courses %>
-      {\scriptsize \textit{\footnotesize{\newline{}\textbf{Courses:} <<edu.courses>>}}}
+      \vspace{2pt}{\scriptsize \textit{\footnotesize{\textbf{Courses:} <<edu.courses>>}}}
 <% endif %>
 <% endfor %>
   \resumeSubHeadingListEnd
