@@ -376,9 +376,9 @@ _RESUME_CLS = r"""
 
 \newcommand{\makeheader}{%
     \printresumename
-    \ifnum\value{addrcount}>0 \printoneaddr{1}\fi
-    \ifnum\value{addrcount}>1 \printoneaddr{2}\fi
-    \ifnum\value{addrcount}>2 \printoneaddr{3}\fi
+    \ifnum\theaddrcount>0\relax \printoneaddr{1}\fi
+    \ifnum\theaddrcount>1\relax \printoneaddr{2}\fi
+    \ifnum\theaddrcount>2\relax \printoneaddr{3}\fi
 }
 
 %--- rSection environment ---
