@@ -374,12 +374,11 @@ _RESUME_CLS = r"""
     \smallskip
 }
 
-%--- Print name + addresses at start of document ---
-\AtBeginDocument{%
+\newcommand{\makeheader}{%
     \printresumename
-    \ifnum\value{addrcount}>0\printoneaddr{1}\fi
-    \ifnum\value{addrcount}>1\printoneaddr{2}\fi
-    \ifnum\value{addrcount}>2\printoneaddr{3}\fi
+    \ifnum\value{addrcount}>0 \printoneaddr{1}\fi
+    \ifnum\value{addrcount}>1 \printoneaddr{2}\fi
+    \ifnum\value{addrcount}>2 \printoneaddr{3}\fi
 }
 
 %--- rSection environment ---
@@ -426,6 +425,7 @@ _TEMPLATE_3 = r"""
 <% endif %>
 
 \begin{document}
+\makeheader
 
 <% if d.summary %>
 \begin{rSection}{Objective}
