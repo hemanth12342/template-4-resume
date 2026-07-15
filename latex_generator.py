@@ -610,14 +610,14 @@ _TEMPLATE_4 = r"""
   \resumeSubHeadingListStart
 <% for edu in d.education %>
   \vspace{-1pt}\item
-    \begin{tabular*}{1.0\textwidth}{l@{\extracolsep{\fill}}r}
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
       \textbf{<<edu.degree>>} & <<edu.institution>> \\
       \textit{<<edu.field>>} & \textit{<<edu.dates>>} \\
 <% if edu.gpa %>
       \textit{GPA: <<edu.gpa>>} & \\
 <% endif %>
 <% if edu.courses %>
-      \multicolumn{2}{p{\textwidth}}{\scriptsize \textit{\footnotesize{\textbf{Courses:} <<edu.courses>>}}} \\
+      \multicolumn{2}{p{0.97\textwidth}}{\scriptsize \textit{\footnotesize{\textbf{Courses:} <<edu.courses>>}}} \\
 <% endif %>
     \end{tabular*}\vspace{-5pt}
 <% endfor %>
