@@ -232,8 +232,8 @@ async def generate_resume(
         raise HTTPException(400, "No file provided.")
     if len(job_description.strip()) < 30:
         raise HTTPException(400, "Job description too short (min 30 characters).")
-    if template_id not in (1, 2, 3, 4):
-        raise HTTPException(400, "template_id must be 1, 2, 3, or 4.")
+    if template_id not in (1, 2, 4):
+        raise HTTPException(400, "template_id must be 1, 2, or 4.")
 
     file_bytes = await resume_file.read()
     if len(file_bytes) > MAX_FILE_BYTES:

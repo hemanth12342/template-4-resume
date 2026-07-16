@@ -341,179 +341,6 @@ _TEMPLATE_2 = r"""
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  resume.cls — written to temp dir at runtime for Template 3
-#  FIX: replaced \let\@origdocument with \AtBeginDocument (was causing Missing })
-# ══════════════════════════════════════════════════════════════════════════════
-
-_RESUME_CLS = r"""
-\ProvidesClass{resume}[Resume class - FAANG Path style]
-\LoadClass[11pt,letterpaper]{article}
-\usepackage[parfill]{parskip}
-\usepackage{array}
-\pagestyle{empty}
-
-%--- Name ---
-\newcommand{\name}[1]{\def\resumename{#1}}
-\def\resumename{}
-\newcommand{\printresumename}{\centerline{\Huge\scshape\textbf{\resumename}}\medskip}
-
-%--- Addresses: stores up to 3 separate lines ---
-\newcounter{addrcount}
-\setcounter{addrcount}{0}
-
-\newcommand{\address}[1]{%
-    \stepcounter{addrcount}%
-    \expandafter\gdef\csname resumeaddr\theaddrcount\endcsname{#1}%
-}
-
-\newcommand{\printoneaddr}[1]{%
-    \begingroup
-        \def\\{~$\diamond$~}%
-        \centerline{\csname resumeaddr#1\endcsname}%
-    \endgroup
-    \smallskip
-}
-
-%--- Print name + addresses at start of document ---
-\AtBeginDocument{%
-    \printresumename
-    \ifnum\value{addrcount}>0\printoneaddr{1}\fi
-    \ifnum\value{addrcount}>1\printoneaddr{2}\fi
-    \ifnum\value{addrcount}>2\printoneaddr{3}\fi
-}
-
-%--- rSection environment ---
-\newenvironment{rSection}[1]{%
-    \medskip
-    \MakeUppercase{\textbf{#1}}%
-    \medskip\hrule\vspace{2pt}
-    \begin{list}{}{%
-        \setlength{\leftmargin}{1.5em}%
-    }%
-    \item[]%
-}{%
-    \end{list}%
-}
-"""
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  TEMPLATE 3 — FAANG Path Classic Resume
-#  FIX: simplified \address{} calls (no multiline Jinja2 blocks inside braces)
-# ══════════════════════════════════════════════════════════════════════════════
-
-_TEMPLATE_3 = r"""
-\documentclass{resume}
-\usepackage[left=0.4in,top=0.4in,right=0.4in,bottom=0.4in]{geometry}
-\usepackage{hyperref}
-\usepackage{enumitem}
-\hypersetup{colorlinks=true, urlcolor=blue, linkcolor=black}
-
-\newcommand{\tab}[1]{\hspace{.2667\textwidth}\rlap{#1}}
-\newcommand{\itab}[1]{\hspace{0em}\rlap{#1}}
-
-\name{<<d.name>>}
-\address{<<d.phone>> \\ \href{mailto:<<d.email>>}{<<d.email | le>>}}
-<% if d.linkedin and d.github %>
-\address{\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>} \\ \href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}}
-<% elif d.linkedin %>
-\address{\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>}}
-<% elif d.github %>
-\address{\href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}}
-<% endif %>
-<% if d.portfolio_url %>
-\address{\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>}}
-<% endif %>
-
-\begin{document}
-
-<% if d.summary %>
-\begin{rSection}{Objective}
-<<d.summary>>
-\end{rSection}
-<% endif %>
-
-<% if d.education %>
-\begin{rSection}{Education}
-<% for edu in d.education %>
-{\bf <<edu.degree>>}, <<edu.institution>> \hfill {<<edu.dates>>}\\
-Field of Study: <<edu.field>><% if edu.gpa %>; GPA: <<edu.gpa>><% endif %>\\
-<% if edu.courses %>
-Relevant Coursework: <<edu.courses>>
-<% endif %>
-<% endfor %>
-\end{rSection}
-<% endif %>
-
-<% if d.skills %>
-\begin{rSection}{Skills}
-\begin{tabular}{ @{} >{\bfseries}l @{\hspace{6ex}} l }
-<% for skill in d.skills %>
-<<skill.category>> & <<skill['items']>> \\
-<% endfor %>
-\end{tabular}
-\end{rSection}
-<% endif %>
-
-<% if d.experience %>
-\begin{rSection}{Experience}
-<% for exp in d.experience %>
-\textbf{<<exp.role>>} \hfill <<exp.dates>>\\
-<<exp.company>> \hfill \textit{<<exp.location>>}
-\begin{itemize}[itemsep=-3pt, topsep=2pt]
-<% for bullet in exp.bullets %>
-\item <<bullet>>
-<% endfor %>
-\end{itemize}
-<% endfor %>
-\end{rSection}
-<% endif %>
-
-<% if d.projects %>
-\begin{rSection}{Projects}
-\vspace{-1.25em}
-<% for project in d.projects %>
-\item \textbf{<<project.title>>.} {<<project.description>>. \textit{Tech: <<project.technologies>>}.}
-<% endfor %>
-\end{rSection}
-<% endif %>
-
-<% if d.certifications %>
-\begin{rSection}{Certifications}
-\begin{itemize}[itemsep=-3pt, topsep=2pt]
-<% for cert in d.certifications %>
-\item \textbf{<<cert.name>>}<% if cert.issuer %>, \textit{<<cert.issuer>>}<% endif %><% if cert.date %> (<<cert.date>>)<% endif %>
-<% endfor %>
-\end{itemize}
-\end{rSection}
-<% endif %>
-
-<% if d.awards %>
-\begin{rSection}{Honors and Awards}
-\begin{itemize}[itemsep=-3pt, topsep=2pt]
-<% for award in d.awards %>
-\item <<award>>
-<% endfor %>
-\end{itemize}
-\end{rSection}
-<% endif %>
-
-<% if d.volunteer %>
-\begin{rSection}{Leadership \& Volunteer}
-\begin{itemize}[itemsep=-3pt, topsep=2pt]
-<% for vol in d.volunteer %>
-\item \textbf{<<vol.role>>}, <<vol.organization>>, <<vol.location>> \hfill \textit{<<vol.dates>>}\\
-<<vol.description>>
-<% endfor %>
-\end{itemize}
-\end{rSection}
-<% endif %>
-
-\end{document}
-"""
-
-
-# ══════════════════════════════════════════════════════════════════════════════
 #  TEMPLATE 4 — Anubhav Singh Developer Resume
 #  FIX: skill['items'] instead of skill.items
 #  NEW: LinkedIn added to heading, Certifications section added
@@ -740,7 +567,7 @@ def _normalize(data: dict) -> dict:
 
 # ── Template routing ───────────────────────────────────────────────────────────
 
-_TEMPLATES = {1: _TEMPLATE_1, 2: _TEMPLATE_2, 3: _TEMPLATE_3, 4: _TEMPLATE_4}
+_TEMPLATES = {1: _TEMPLATE_1, 2: _TEMPLATE_2, 4: _TEMPLATE_4}
 
 
 # ── Public entry point ─────────────────────────────────────────────────────────
@@ -759,11 +586,6 @@ def generate_pdf(raw_data: dict, template_id: int = 4) -> bytes:
     latex_src    = env.from_string(template_src).render(d=escaped)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Template 3 needs resume.cls written next to the .tex file
-        if template_id == 3:
-            with open(os.path.join(tmpdir, "resume.cls"), "w", encoding="utf-8") as fh:
-                fh.write(_RESUME_CLS)
-
         tex_path = os.path.join(tmpdir, "resume.tex")
         pdf_path = os.path.join(tmpdir, "resume.pdf")
         log_path = os.path.join(tmpdir, "resume.log")
