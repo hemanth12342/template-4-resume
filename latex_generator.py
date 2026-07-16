@@ -414,7 +414,6 @@ _TEMPLATE_3 = r"""
 \documentclass{resume}
 \usepackage[left=0.4in,top=0.4in,right=0.4in,bottom=0.4in]{geometry}
 \usepackage{hyperref}
-\usepackage{enumitem}
 \hypersetup{colorlinks=true, urlcolor=blue, linkcolor=black}
 
 \newcommand{\tab}[1]{\hspace{.2667\textwidth}\rlap{#1}}
@@ -469,7 +468,8 @@ Relevant Coursework: <<edu.courses>>
 <% for exp in d.experience %>
 \textbf{<<exp.role>>} \hfill <<exp.dates>>\\
 <<exp.company>> \hfill \textit{<<exp.location>>}
-\begin{itemize}[itemsep=-3pt, topsep=2pt]
+\begin{itemize}
+\setlength{\itemsep}{-2pt}
 <% for bullet in exp.bullets %>
 \item <<bullet>>
 <% endfor %>
@@ -480,9 +480,10 @@ Relevant Coursework: <<edu.courses>>
 
 <% if d.projects %>
 \begin{rSection}{Projects}
-\begin{itemize}[itemsep=-3pt, topsep=2pt, leftmargin=1em]
+\begin{itemize}
+\setlength{\itemsep}{-2pt}
 <% for project in d.projects %>
-\item \textbf{<<project.title>>.} {<<project.description>>. \textit{Tech: <<project.technologies>>}.}
+\item \textbf{<<project.title>>.} <<project.description>> \textit{(Tech: <<project.technologies>>)}
 <% endfor %>
 \end{itemize}
 \end{rSection}
@@ -490,7 +491,8 @@ Relevant Coursework: <<edu.courses>>
 
 <% if d.certifications %>
 \begin{rSection}{Certifications}
-\begin{itemize}[itemsep=-3pt, topsep=2pt]
+\begin{itemize}
+\setlength{\itemsep}{-2pt}
 <% for cert in d.certifications %>
 \item \textbf{<<cert.name>>}<% if cert.issuer %>, \textit{<<cert.issuer>>}<% endif %><% if cert.date %> (<<cert.date>>)<% endif %>
 <% endfor %>
@@ -500,7 +502,8 @@ Relevant Coursework: <<edu.courses>>
 
 <% if d.awards %>
 \begin{rSection}{Honors and Awards}
-\begin{itemize}[itemsep=-3pt, topsep=2pt]
+\begin{itemize}
+\setlength{\itemsep}{-2pt}
 <% for award in d.awards %>
 \item <<award>>
 <% endfor %>
@@ -510,7 +513,8 @@ Relevant Coursework: <<edu.courses>>
 
 <% if d.volunteer %>
 \begin{rSection}{Leadership \& Volunteer}
-\begin{itemize}[itemsep=-3pt, topsep=2pt]
+\begin{itemize}
+\setlength{\itemsep}{-2pt}
 <% for vol in d.volunteer %>
 \item \textbf{<<vol.role>>}, <<vol.organization>>, <<vol.location>> \hfill \textit{<<vol.dates>>}\\
 <<vol.description>>
