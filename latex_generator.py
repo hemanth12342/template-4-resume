@@ -480,10 +480,11 @@ Relevant Coursework: <<edu.courses>>
 
 <% if d.projects %>
 \begin{rSection}{Projects}
-\vspace{-1.25em}
+\begin{itemize}[itemsep=-3pt, topsep=2pt, leftmargin=1em]
 <% for project in d.projects %>
 \item \textbf{<<project.title>>.} {<<project.description>>. \textit{Tech: <<project.technologies>>}.}
 <% endfor %>
+\end{itemize}
 \end{rSection}
 <% endif %>
 
@@ -735,8 +736,9 @@ def _normalize(data: dict) -> dict:
         vol.setdefault("organization", vol.get("role", ""))
         vol.setdefault("description", "")
 
-    for proj in data.get("projects", []):         # ← NEW
-        proj.setdefault("bullets", [])            # ← NEW
+    for proj in data.get("projects", []):
+        proj.setdefault("bullets", [])
+        proj.setdefault("description", "")
 
     for cert in data.get("certifications", []):   # ← NEW
         cert.setdefault("name", "")
