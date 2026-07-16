@@ -353,33 +353,46 @@ _RESUME_CLS = r"""
 \pagestyle{empty}
 
 %--- Name ---
-\newcommand{\name}[1]{\def\resumename{#1}}
-\def\resumename{}
-\newcommand{\printresumename}{\centerline{\Huge\scshape\textbf{\resumename}}\medskip}
-
-%--- Addresses: stores up to 3 separate lines ---
-\newcounter{addrcount}
-\setcounter{addrcount}{0}
-
-\newcommand{\address}[1]{%
-    \stepcounter{addrcount}%
-    \expandafter\gdef\csname resumeaddr\theaddrcount\endcsname{#1}%
+\newcommand{\name}[1]{\gdef\resumename{#1}}
+\gdef\resumename{}
+\newcommand{\printresumename}{%
+    \centerline{\Huge\scshape\textbf{\resumename}}\medskip
 }
 
-\newcommand{\printoneaddr}[1]{%
+%--- Address slots (up to 3).
+%    FIX: use \ifx\relax instead of \ifnum\value{} — avoids Missing = error.
+%    \let\addrI\relax means "slot is empty"; \gdef sets it when \address{} is called.
+\let\addrI\relax
+\let\addrII\relax
+\let\addrIII\relax
+
+\newcommand{\address}[1]{%
+    \ifx\addrI\relax
+        \gdef\addrI{#1}%
+    \else\ifx\addrII\relax
+        \gdef\addrII{#1}%
+    \else
+        \gdef\addrIII{#1}%
+    \fi\fi
+}
+
+\newcommand{\printaddr}[1]{%
     \begingroup
         \def\\{~$\diamond$~}%
-        \centerline{\csname resumeaddr#1\endcsname}%
+        \centerline{#1}%
     \endgroup
     \smallskip
 }
 
-\newcommand{\makeheader}{%
+%--- Print name + addresses when \begin{document} is reached ---
+\AtBeginDocument{%
     \printresumename
-    \ifnum\theaddrcount>0\relax \printoneaddr{1}\fi
-    \ifnum\theaddrcount>1\relax \printoneaddr{2}\fi
-    \ifnum\theaddrcount>2\relax \printoneaddr{3}\fi
+    \ifx\addrI\relax\else\printaddr{\addrI}\fi
+    \ifx\addrII\relax\else\printaddr{\addrII}\fi
+    \ifx\addrIII\relax\else\printaddr{\addrIII}\fi
 }
+\newcommand{\makeheader}{}
+
 
 %--- rSection environment ---
 \newenvironment{rSection}[1]{%
