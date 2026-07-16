@@ -355,13 +355,8 @@ _RESUME_CLS = r"""
 %--- Name ---
 \newcommand{\name}[1]{\gdef\resumename{#1}}
 \gdef\resumename{}
-\newcommand{\printresumename}{%
-    \centerline{\Huge\scshape\textbf{\resumename}}\medskip
-}
 
-%--- Address slots (up to 3).
-%    FIX: use \ifx\relax instead of \ifnum\value{} — avoids Missing = error.
-%    \let\addrI\relax means "slot is empty"; \gdef sets it when \address{} is called.
+%--- Address slots (up to 3) ---
 \let\addrI\relax
 \let\addrII\relax
 \let\addrIII\relax
@@ -384,15 +379,16 @@ _RESUME_CLS = r"""
     \smallskip
 }
 
-%--- Print name + addresses when \begin{document} is reached ---
-\AtBeginDocument{%
-    \printresumename
+%--- \makeheader is called from the document body AFTER \begin{document}
+%    so hyperref has already finished its own \AtBeginDocument setup
+%    and \href is safe to use inside addresses ---
+\newcommand{\makeheader}{%
+    \centerline{\Huge\scshape\textbf{\resumename}}\medskip
     \ifx\addrI\relax\else\printaddr{\addrI}\fi
     \ifx\addrII\relax\else\printaddr{\addrII}\fi
     \ifx\addrIII\relax\else\printaddr{\addrIII}\fi
+    \vspace{4pt}
 }
-\newcommand{\makeheader}{}
-
 
 %--- rSection environment ---
 \newenvironment{rSection}[1]{%
@@ -427,11 +423,11 @@ _TEMPLATE_3 = r"""
 \name{<<d.name>>}
 \address{<<d.phone>> \\ \href{mailto:<<d.email>>}{<<d.email | le>>}}
 <% if d.linkedin and d.github %>
-\address{\href{<<d.linkedin>>}{<<d.linkedin | handle | le>>} \\ \href{https://github.com/<<d.github>>}{<<d.github | le>>}}
+\address{\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>} \\ \href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}}
 <% elif d.linkedin %>
-\address{\href{<<d.linkedin>>}{<<d.linkedin | handle | le>>}}
+\address{\href{<<d.linkedin>>}{<<d.linkedin | clean_url | le>>}}
 <% elif d.github %>
-\address{\href{https://github.com/<<d.github>>}{<<d.github | le>>}}
+\address{\href{https://github.com/<<d.github>>}{github.com/<<d.github | le>>}}
 <% endif %>
 <% if d.portfolio_url %>
 \address{\href{<<d.portfolio_url>>}{<<d.portfolio_url | clean_url | le>>}}
@@ -484,13 +480,9 @@ Relevant Coursework: <<edu.courses>>
 
 <% if d.projects %>
 \begin{rSection}{Projects}
+\vspace{-1.25em}
 <% for project in d.projects %>
-\textbf{<<project.title>>} \hfill \textit{<<project.technologies>>}
-\begin{itemize}[itemsep=-3pt, topsep=2pt]
-<% for bullet in project.bullets %>
-\item <<bullet>>
-<% endfor %>
-\end{itemize}
+\item \textbf{<<project.title>>.} {<<project.description>>. \textit{Tech: <<project.technologies>>}.}
 <% endfor %>
 \end{rSection}
 <% endif %>
