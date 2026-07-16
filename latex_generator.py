@@ -341,12 +341,12 @@ _TEMPLATE_2 = r"""
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  TEMPLATE 4 — Anubhav Singh Developer Resume
+#  TEMPLATE 3 — Anubhav Singh Developer Resume
 #  FIX: skill['items'] instead of skill.items
 #  NEW: LinkedIn added to heading, Certifications section added
 # ══════════════════════════════════════════════════════════════════════════════
 
-_TEMPLATE_4 = r"""
+_TEMPLATE_3 = r"""
 \documentclass[a4paper,12pt]{article}
 
 \usepackage{latexsym}
@@ -567,19 +567,19 @@ def _normalize(data: dict) -> dict:
 
 # ── Template routing ───────────────────────────────────────────────────────────
 
-_TEMPLATES = {1: _TEMPLATE_1, 2: _TEMPLATE_2, 4: _TEMPLATE_4}
+_TEMPLATES = {1: _TEMPLATE_1, 2: _TEMPLATE_2, 3: _TEMPLATE_3}
 
 
 # ── Public entry point ─────────────────────────────────────────────────────────
 
-def generate_pdf(raw_data: dict, template_id: int = 4) -> bytes:
+def generate_pdf(raw_data: dict, template_id: int = 3) -> bytes:
     if shutil.which("pdflatex") is None:
         raise RuntimeError(
             "pdflatex not found. Install MacTeX (macOS) or "
             "texlive-latex-extra + texlive-fonts-extra (Linux/Docker)."
         )
 
-    template_src = _TEMPLATES.get(template_id, _TEMPLATE_4)
+    template_src = _TEMPLATES.get(template_id, _TEMPLATE_3)
     data         = _normalize(dict(raw_data))
     escaped      = _escape_data(data)
     env          = _make_jinja_env()

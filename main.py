@@ -226,14 +226,14 @@ Return ONLY the enhanced JSON in the EXACT SAME SCHEMA. No markdown, no commenta
 async def generate_resume(
     resume_file:     UploadFile = File(...),
     job_description: str        = Form(...),
-    template_id:     int        = Form(default=4),
+    template_id:     int        = Form(default=3),
 ):
     if not resume_file.filename:
         raise HTTPException(400, "No file provided.")
     if len(job_description.strip()) < 30:
         raise HTTPException(400, "Job description too short (min 30 characters).")
-    if template_id not in (1, 2, 4):
-        raise HTTPException(400, "template_id must be 1, 2, or 4.")
+    if template_id not in (1, 2, 3):
+        raise HTTPException(400, "template_id must be 1, 2, or 3.")
 
     file_bytes = await resume_file.read()
     if len(file_bytes) > MAX_FILE_BYTES:
@@ -262,7 +262,7 @@ async def generate_resume(
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "model": MODEL, "templates": [1, 2, 3, 4]}
+    return {"status": "ok", "model": MODEL, "templates": [1, 2, 3]}
 
 
 if __name__ == "__main__":

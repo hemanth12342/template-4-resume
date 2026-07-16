@@ -37,7 +37,7 @@ const btnRedownload = document.getElementById('btn-redownload');
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let selectedFile = null;
-let selectedTemplate = '4';    // default — Template 4 is pre-checked in HTML
+let selectedTemplate = '3';    // default — Template 3 is pre-checked in HTML
 let lastBlob = null;
 let lastFilename = 'tailored_resume.pdf';
 
