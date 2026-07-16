@@ -353,41 +353,33 @@ _RESUME_CLS = r"""
 \pagestyle{empty}
 
 %--- Name ---
-\newcommand{\name}[1]{\gdef\resumename{#1}}
-\gdef\resumename{}
+\newcommand{\name}[1]{\def\resumename{#1}}
+\def\resumename{}
+\newcommand{\printresumename}{\centerline{\Huge\scshape\textbf{\resumename}}\medskip}
 
-%--- Address slots (up to 3) ---
-\let\addrI\relax
-\let\addrII\relax
-\let\addrIII\relax
+%--- Addresses: stores up to 3 separate lines ---
+\newcounter{addrcount}
+\setcounter{addrcount}{0}
 
 \newcommand{\address}[1]{%
-    \ifx\addrI\relax
-        \gdef\addrI{#1}%
-    \else\ifx\addrII\relax
-        \gdef\addrII{#1}%
-    \else
-        \gdef\addrIII{#1}%
-    \fi\fi
+    \stepcounter{addrcount}%
+    \expandafter\gdef\csname resumeaddr\theaddrcount\endcsname{#1}%
 }
 
-\newcommand{\printaddr}[1]{%
+\newcommand{\printoneaddr}[1]{%
     \begingroup
         \def\\{~$\diamond$~}%
-        \centerline{#1}%
+        \centerline{\csname resumeaddr#1\endcsname}%
     \endgroup
     \smallskip
 }
 
-%--- \makeheader is called from the document body AFTER \begin{document}
-%    so hyperref has already finished its own \AtBeginDocument setup
-%    and \href is safe to use inside addresses ---
-\newcommand{\makeheader}{%
-    \centerline{\Huge\scshape\textbf{\resumename}}\medskip
-    \ifx\addrI\relax\else\printaddr{\addrI}\fi
-    \ifx\addrII\relax\else\printaddr{\addrII}\fi
-    \ifx\addrIII\relax\else\printaddr{\addrIII}\fi
-    \vspace{4pt}
+%--- Print name + addresses at start of document ---
+\AtBeginDocument{%
+    \printresumename
+    \ifnum\value{addrcount}>0\printoneaddr{1}\fi
+    \ifnum\value{addrcount}>1\printoneaddr{2}\fi
+    \ifnum\value{addrcount}>2\printoneaddr{3}\fi
 }
 
 %--- rSection environment ---
@@ -414,6 +406,7 @@ _TEMPLATE_3 = r"""
 \documentclass{resume}
 \usepackage[left=0.4in,top=0.4in,right=0.4in,bottom=0.4in]{geometry}
 \usepackage{hyperref}
+\usepackage{enumitem}
 \hypersetup{colorlinks=true, urlcolor=blue, linkcolor=black}
 
 \newcommand{\tab}[1]{\hspace{.2667\textwidth}\rlap{#1}}
@@ -433,7 +426,6 @@ _TEMPLATE_3 = r"""
 <% endif %>
 
 \begin{document}
-\makeheader
 
 <% if d.summary %>
 \begin{rSection}{Objective}
@@ -468,8 +460,7 @@ Relevant Coursework: <<edu.courses>>
 <% for exp in d.experience %>
 \textbf{<<exp.role>>} \hfill <<exp.dates>>\\
 <<exp.company>> \hfill \textit{<<exp.location>>}
-\begin{itemize}
-\setlength{\itemsep}{-2pt}
+\begin{itemize}[itemsep=-3pt, topsep=2pt]
 <% for bullet in exp.bullets %>
 \item <<bullet>>
 <% endfor %>
@@ -480,19 +471,16 @@ Relevant Coursework: <<edu.courses>>
 
 <% if d.projects %>
 \begin{rSection}{Projects}
-\begin{itemize}
-\setlength{\itemsep}{-2pt}
+\vspace{-1.25em}
 <% for project in d.projects %>
-\item \textbf{<<project.title>>.} <<project.description>> \textit{(Tech: <<project.technologies>>)}
+\item \textbf{<<project.title>>.} {<<project.description>>. \textit{Tech: <<project.technologies>>}.}
 <% endfor %>
-\end{itemize}
 \end{rSection}
 <% endif %>
 
 <% if d.certifications %>
 \begin{rSection}{Certifications}
-\begin{itemize}
-\setlength{\itemsep}{-2pt}
+\begin{itemize}[itemsep=-3pt, topsep=2pt]
 <% for cert in d.certifications %>
 \item \textbf{<<cert.name>>}<% if cert.issuer %>, \textit{<<cert.issuer>>}<% endif %><% if cert.date %> (<<cert.date>>)<% endif %>
 <% endfor %>
@@ -502,8 +490,7 @@ Relevant Coursework: <<edu.courses>>
 
 <% if d.awards %>
 \begin{rSection}{Honors and Awards}
-\begin{itemize}
-\setlength{\itemsep}{-2pt}
+\begin{itemize}[itemsep=-3pt, topsep=2pt]
 <% for award in d.awards %>
 \item <<award>>
 <% endfor %>
@@ -513,8 +500,7 @@ Relevant Coursework: <<edu.courses>>
 
 <% if d.volunteer %>
 \begin{rSection}{Leadership \& Volunteer}
-\begin{itemize}
-\setlength{\itemsep}{-2pt}
+\begin{itemize}[itemsep=-3pt, topsep=2pt]
 <% for vol in d.volunteer %>
 \item \textbf{<<vol.role>>}, <<vol.organization>>, <<vol.location>> \hfill \textit{<<vol.dates>>}\\
 <<vol.description>>
