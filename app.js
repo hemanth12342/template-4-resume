@@ -9,37 +9,53 @@ const API = 'https://template-4-resume.onrender.com';
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 
-const dropZone = document.getElementById('drop-zone');
-const fileInput = document.getElementById('file-input');
-const dzIdle = document.getElementById('dz-idle');
-const dzDone = document.getElementById('dz-done');
+const dropZone   = document.getElementById('drop-zone');
+const fileInput  = document.getElementById('file-input');
+const dzIdle     = document.getElementById('dz-idle');
+const dzDone     = document.getElementById('dz-done');
 const dzFilename = document.getElementById('dz-filename');
-const btnChange = document.getElementById('btn-change');
+const btnChange  = document.getElementById('btn-change');
 
 const jdInput = document.getElementById('jd-input');
 const jdChars = document.getElementById('jd-chars');
 
-const btnGenerate = document.getElementById('btn-generate');
-const btnLabel = document.getElementById('btn-label');
-const btnArrow = document.getElementById('btn-arrow');
+const btnGenerate  = document.getElementById('btn-generate');
+const btnLabel     = document.getElementById('btn-label');
+const btnArrow     = document.getElementById('btn-arrow');
 
-const statusBox = document.getElementById('status-box');
+const statusBox    = document.getElementById('status-box');
 const progressFill = document.getElementById('progress-fill');
-const statusMsg = document.getElementById('status-msg');
+const statusMsg    = document.getElementById('status-msg');
 
-const errorBox = document.getElementById('error-box');
-const errorMsg = document.getElementById('error-msg');
-const btnRetry = document.getElementById('btn-retry');
+const errorBox  = document.getElementById('error-box');
+const errorMsg  = document.getElementById('error-msg');
+const btnRetry  = document.getElementById('btn-retry');
 
-const successBox = document.getElementById('success-box');
+const successBox    = document.getElementById('success-box');
 const btnRedownload = document.getElementById('btn-redownload');
+
+// JSON preview refs
+const cardJsonPreview = document.getElementById('card-json-preview');
+const jsonParseStatus = document.getElementById('json-parse-status');
+const jsonSpinner     = document.getElementById('json-spinner');
+const jsonParseMsg    = document.getElementById('json-parse-msg');
+const jsonDataDisplay = document.getElementById('json-data-display');
+const jsonFields      = document.getElementById('json-fields');
+const btnDownloadJson = document.getElementById('btn-download-json');
+const confirmGenerate = document.getElementById('confirm-generate');
+const btnYesGenerate  = document.getElementById('btn-yes-generate');
+const btnNoGenerate   = document.getElementById('btn-no-generate');
+
+const cardJd     = document.getElementById('card-jd');
+const genSection = document.getElementById('gen-section');
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
-let selectedFile = null;
+let selectedFile     = null;
 let selectedTemplate = '3';    // default — Template 3 is pre-checked in HTML
-let lastBlob = null;
-let lastFilename = 'tailored_resume.pdf';
+let lastBlob         = null;
+let lastFilename     = 'tailored_resume.pdf';
+let extractedData    = null;   // stores the JSON from /parse
 
 // ── Template selection ────────────────────────────────────────────────────────
 
@@ -89,11 +105,154 @@ function setFile(file) {
   dzFilename.textContent = file.name;
   dzIdle.hidden = true; dzDone.hidden = false;
   resetStatus();
+  parseResume(file);   // ← automatically extract features on upload
 }
 
 // ── JD character count ────────────────────────────────────────────────────────
 
 jdInput.addEventListener('input', () => { jdChars.textContent = jdInput.value.length; });
+
+// ── Parse resume on upload ───────────────────────────────────────────────────
+
+async function parseResume(file) {
+  // Reset JSON card state
+  extractedData = null;
+  cardJsonPreview.hidden  = false;
+  jsonParseStatus.hidden  = false;
+  jsonDataDisplay.hidden  = true;
+  confirmGenerate.hidden  = true;
+  cardJd.hidden           = true;
+  genSection.hidden       = true;
+  jsonSpinner.textContent = '⏳';
+  jsonParseMsg.textContent = 'Extracting key features from your resume…';
+
+  try {
+    const form = new FormData();
+    form.append('resume_file', file);
+    const res = await fetch(`${API}/parse`, { method: 'POST', body: form });
+    if (!res.ok) {
+      let detail = `Server error (${res.status})`;
+      try { detail = (await res.json()).detail ?? detail; } catch { /* ignore */ }
+      throw new Error(detail);
+    }
+    extractedData = await res.json();
+    renderJsonFields(extractedData);
+    jsonParseStatus.hidden  = true;
+    jsonDataDisplay.hidden  = false;
+    confirmGenerate.hidden  = false;
+  } catch (err) {
+    jsonSpinner.textContent  = '⚠️';
+    jsonParseMsg.textContent = `Could not extract resume data: ${err.message}`;
+  }
+}
+
+function renderJsonFields(data) {
+  jsonFields.innerHTML = '';
+
+  const simple = [
+    ['Name',       data.name],
+    ['Email',      data.email],
+    ['Phone',      data.phone],
+    ['LinkedIn',   data.linkedin],
+    ['GitHub',     data.github],
+    ['Portfolio',  data.portfolio_url],
+  ];
+
+  simple.forEach(([label, val]) => {
+    if (!val) return;
+    const div = document.createElement('div');
+    div.className = 'json-field';
+    div.innerHTML = `<span class="json-field-label">${label}</span><span class="json-field-value">${escHtml(val)}</span>`;
+    jsonFields.appendChild(div);
+  });
+
+  // Summary
+  if (data.summary) {
+    const div = document.createElement('div');
+    div.className = 'json-field json-field-full';
+    div.innerHTML = `<span class="json-field-label">Summary</span><span class="json-field-value json-summary">${escHtml(data.summary)}</span>`;
+    jsonFields.appendChild(div);
+  }
+
+  // Skills
+  if (data.skills && data.skills.length) {
+    const div = document.createElement('div');
+    div.className = 'json-field json-field-full';
+    const skillList = data.skills.map(s => `<span class="skill-tag">${escHtml(s.category)}: ${escHtml(s.items)}</span>`).join('');
+    div.innerHTML = `<span class="json-field-label">Skills</span><span class="json-field-value json-skills">${skillList}</span>`;
+    jsonFields.appendChild(div);
+  }
+
+  // Experience count
+  if (data.experience && data.experience.length) {
+    const div = document.createElement('div');
+    div.className = 'json-field';
+    const roles = data.experience.map(e => escHtml(e.role + ' @ ' + e.company)).join(', ');
+    div.innerHTML = `<span class="json-field-label">Experience (${data.experience.length})</span><span class="json-field-value">${roles}</span>`;
+    jsonFields.appendChild(div);
+  }
+
+  // Projects count
+  if (data.projects && data.projects.length) {
+    const div = document.createElement('div');
+    div.className = 'json-field';
+    const titles = data.projects.map(p => escHtml(p.title)).join(', ');
+    div.innerHTML = `<span class="json-field-label">Projects (${data.projects.length})</span><span class="json-field-value">${titles}</span>`;
+    jsonFields.appendChild(div);
+  }
+
+  // Education
+  if (data.education && data.education.length) {
+    const div = document.createElement('div');
+    div.className = 'json-field';
+    const edu = data.education.map(e => escHtml(e.degree + ', ' + e.institution)).join(' | ');
+    div.innerHTML = `<span class="json-field-label">Education</span><span class="json-field-value">${edu}</span>`;
+    jsonFields.appendChild(div);
+  }
+
+  // Certifications
+  if (data.certifications && data.certifications.length) {
+    const div = document.createElement('div');
+    div.className = 'json-field';
+    const certs = data.certifications.map(c => escHtml(c.name)).join(', ');
+    div.innerHTML = `<span class="json-field-label">Certifications</span><span class="json-field-value">${certs}</span>`;
+    jsonFields.appendChild(div);
+  }
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Download JSON button
+btnDownloadJson.addEventListener('click', () => {
+  if (!extractedData) return;
+  const blob = new Blob([JSON.stringify(extractedData, null, 2)], { type: 'application/json' });
+  const name = (extractedData.name || 'resume').replace(/\s+/g, '_');
+  triggerDownload(blob, `${name}_extracted.json`);
+});
+
+// Confirm-generate buttons
+btnYesGenerate.addEventListener('click', () => {
+  confirmGenerate.hidden = true;
+  cardJd.hidden    = false;
+  genSection.hidden = false;
+  cardJd.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+btnNoGenerate.addEventListener('click', () => {
+  // Reset everything back to just the upload step
+  cardJsonPreview.hidden = true;
+  cardJd.hidden          = true;
+  genSection.hidden      = true;
+  selectedFile           = null;
+  extractedData          = null;
+  fileInput.value        = '';
+  dzIdle.hidden          = false;
+  dzDone.hidden          = true;
+  resetStatus();
+});
 
 // ── Progress steps ────────────────────────────────────────────────────────────
 

@@ -17,7 +17,7 @@ import pdfplumber
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from groq import Groq
 
 from latex_generator import generate_pdf
@@ -258,6 +258,31 @@ async def generate_resume(
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# ── Parse-only endpoint ───────────────────────────────────────────────────────
+
+@app.post("/parse")
+async def parse_resume_only(
+    resume_file: UploadFile = File(...),
+):
+    """Extract key features from a resume and return them as JSON.
+    This is called immediately after file upload so the user can
+    review the extracted data before deciding to generate a PDF.
+    """
+    if not resume_file.filename:
+        raise HTTPException(400, "No file provided.")
+
+    file_bytes = await resume_file.read()
+    if len(file_bytes) > MAX_FILE_BYTES:
+        raise HTTPException(400, "File too large (max 10 MB).")
+
+    resume_text = _extract_text(file_bytes, resume_file.filename)
+
+    loop = asyncio.get_event_loop()
+    structured = await loop.run_in_executor(_pool, _parse_resume, resume_text)
+
+    return JSONResponse(content=structured)
 
 
 @app.get("/health")

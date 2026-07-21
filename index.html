@@ -120,10 +120,43 @@
         </div>
       </div>
 
-      <!-- ── Step 3 : Paste JD ── -->
-      <div class="card" id="card-jd">
+      <!-- ── Step 4 : Extracted Resume JSON Preview ── -->
+      <div class="card" id="card-json-preview" hidden>
         <div class="card-label">
-          <span class="step-num">3</span>
+          <span class="step-num">4</span>
+          <h2>Extracted Resume Data</h2>
+        </div>
+        <p class="json-preview-note">Your resume was analysed by AI and the key features below were extracted. Review them, then decide whether to generate your tailored PDF.</p>
+
+        <div class="json-parse-status" id="json-parse-status">
+          <span class="spinner" id="json-spinner">⏳</span>
+          <span id="json-parse-msg">Extracting key features from your resume…</span>
+        </div>
+
+        <div id="json-data-display" hidden>
+          <div class="json-fields" id="json-fields"></div>
+          <div class="json-actions">
+            <button class="btn-action" id="btn-download-json" type="button">⬇ Download JSON</button>
+          </div>
+        </div>
+
+        <!-- Generate confirmation -->
+        <div class="confirm-generate" id="confirm-generate" hidden>
+          <p class="confirm-question">✨ Ready to generate your tailored resume?</p>
+          <div class="confirm-btns">
+            <button class="btn-generate btn-yes" id="btn-yes-generate" type="button">
+              <span>Yes, Generate My Resume</span>
+              <span class="btn-arrow">→</span>
+            </button>
+            <button class="btn-cancel" id="btn-no-generate" type="button">No, not now</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Step 5 : Paste JD (shown only after confirming generate) ── -->
+      <div class="card" id="card-jd" hidden>
+        <div class="card-label">
+          <span class="step-num">5</span>
           <h2>Paste Job Description</h2>
         </div>
 
@@ -132,8 +165,8 @@
         <p class="char-count"><span id="jd-chars">0</span> characters</p>
       </div>
 
-      <!-- ── Generate ── -->
-      <div class="gen-section">
+      <!-- ── Generate (hidden until user confirms) ── -->
+      <div class="gen-section" id="gen-section" hidden>
         <p class="gen-note">Typically takes 20 – 35 seconds</p>
 
         <button class="btn-generate" id="btn-generate" type="button">

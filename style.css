@@ -566,3 +566,141 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── JSON Preview Card ── */
+
+.json-preview-note {
+  font-size: .82rem;
+  color: var(--text-2);
+  margin-bottom: 18px;
+  line-height: 1.6;
+}
+
+.json-parse-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .86rem;
+  color: var(--text-2);
+  padding: 14px 0;
+}
+
+.spinner {
+  font-size: 1.2rem;
+  animation: spin 1.4s linear infinite;
+  display: inline-block;
+}
+
+.json-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 600px) {
+  .json-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.json-field {
+  background: rgba(255,255,255,.035);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  word-break: break-word;
+}
+
+.json-field-full {
+  grid-column: 1 / -1;
+}
+
+.json-field-label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #7c70f0;
+}
+
+.json-field-value {
+  font-size: .82rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.json-summary {
+  color: var(--text-2);
+  font-size: .79rem;
+}
+
+.json-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.skill-tag {
+  background: rgba(79, 70, 229, .15);
+  border: 1px solid rgba(79, 70, 229, .3);
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-size: .72rem;
+  color: #a5a0ff;
+}
+
+.json-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+  margin-bottom: 10px;
+}
+
+/* ── Confirm Generate Section ── */
+
+.confirm-generate {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--card-border);
+}
+
+.confirm-question {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.confirm-btns {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.btn-yes {
+  font-size: .92rem;
+  padding: 12px 26px;
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  color: var(--text-2);
+  font-size: .86rem;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-cancel:hover {
+  border-color: var(--error);
+  color: var(--error);
+  background: rgba(239, 68, 68, .07);
+}
