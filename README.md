@@ -59,10 +59,25 @@ cd template-4-resume
 ```
 
 ### 2. Environment Variables
-Create a `.env` file in the root directory and add your API keys:
+
+Create a `.env` file in the root directory with the following variables:
+
 ```env
+# ============================================================
+#  AI Resume Builder — Environment Variables
+#  Get your FREE Groq API key at: https://console.groq.com/keys
+# ============================================================
+
 GROQ_API_KEY=your_groq_api_key_here
 ```
+
+> **🔑 Get Your Groq API Key:**
+> 1. Visit [https://console.groq.com/keys](https://console.groq.com/keys)
+> 2. Sign up / Log in (it's **free**)
+> 3. Click **"Create API Key"**
+> 4. Copy and paste it as the value of `GROQ_API_KEY` in your `.env` file
+
+> ⚠️ **Security Note:** The `.env` file is listed in `.gitignore` and will **never** be committed to the repository. Never share or expose your API key publicly.
 
 ### 3. Run the Application
 
